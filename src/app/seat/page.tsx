@@ -368,20 +368,27 @@ function SeatSelectionContent() {
 }
 
 // url 파라미터를 사용하므로 Suspense로 감싸주어야 합니다.
+// url 파라미터를 사용하므로 Suspense로 감싸주어야 합니다.
 export default function SeatSelectionPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin text-green-500 mb-4" size={50} />
-        <p className="font-bold text-gray-500 animate-pulse">안전하게 공연 데이터를 불러오는 중입니다...</p>
-      </div>
-    }>
-      {/* 🔥 핵심: KOPIS 로딩하는 동안 백그라운드에서 지도를 미리 다운로드! (속도 대폭 향상) */}
+    <>
+      {/* 🔥 핵심 수정 사항:
+        1. strategy를 "beforeInteractive"로 변경하여 인증 실패(지도가 떴다 사라짐) 방지
+        2. <></> (Fragment) 안에 Script와 Suspense를 함께 넣어 문법 오류 해결
+      */}
       <Script
         src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=wm2szfaw99&submodules=geocoder"
-        strategy="afterInteractive"
+        strategy="beforeInteractive"
       />
-      <SeatSelectionContent />
-    </Suspense>
+      
+      <Suspense fallback={
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+          <Loader2 className="animate-spin text-green-500 mb-4" size={50} />
+          <p className="font-bold text-gray-500 animate-pulse">안전하게 공연 데이터를 불러오는 중입니다...</p>
+        </div>
+      }>
+        <SeatSelectionContent />
+      </Suspense>
+    </>
   );
 }
