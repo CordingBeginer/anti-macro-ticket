@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* v4부터는 커스텀 색상을 여기서 바로 만듭니다 */
+@theme {
+  --color-melon-green: #00CD3C;
+}
+
+body {
+  background-color: #ffffff;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 가로 스크롤바 숨기기 */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* 카카오맵 이미지 타일 깨짐 방지 */
+.kakao-map-container img {
+  max-width: none !important;
+}
