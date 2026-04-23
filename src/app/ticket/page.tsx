@@ -5,9 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Ticket, Trash2, Loader2, Calendar, MapPin, AlertCircle, ShieldCheck, Smartphone, X, RefreshCw } from "lucide-react";
 
-// Firebase 모듈
-import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { db } from "../../lib/firebase"; 
+// 🔥 Supabase 설정
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = "https://aezicrrmxqylummyocnr.supabase.co";
+const supabaseKey = "sb_publishable_7qxr403vHuriZdo4n1rxhQ_9u-FhgpR"; 
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function MyTicketPage() {
   const router = useRouter();
@@ -15,11 +18,9 @@ export default function MyTicketPage() {
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  // 모달 제어용 상태
   const [activeQr, setActiveQr] = useState<any | null>(null);
   const [qrTimer, setQrTimer] = useState(15);
 
-  // QR 갱신 타이머 로직 (15초)
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (activeQr) {
@@ -31,17 +32,47 @@ export default function MyTicketPage() {
     return () => clearInterval(interval);
   }, [activeQr]);
 
-  // Firebase에서 내 티켓 불러오기
+  // 🔥 1. Supabase에서 티켓 불러오기 + 뭉치기 로직
   useEffect(() => {
     const fetchMyTickets = async () => {
       try {
-        const q = query(collection(db, "tickets"), where("userId", "==", "test-user-01"));
-        const querySnapshot = await getDocs(q);
-        const fetchedTickets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const { data, error } = await supabase
+          .from("bookings")
+          .select("*")
+          .eq("user_id", "test-user-01") 
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
         
-        // 최신 예매순으로 정렬 (필요시)
-        fetchedTickets.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
-        setTickets(fetchedTickets);
+        if (data) {
+          // 💡 핵심: 데이터 그룹화 로직 (공연 제목 + 날짜가 같으면 뭉친다!)
+          const groupedData = data.reduce((acc: any[], current: any) => {
+            const existing = acc.find(item => item.title === current.title && item.date === current.date);
+
+            if (existing) {
+              // 이미 같은 공연 카드가 있다면: 좌석 번호만 배열에 추가하고 가격 합산
+              // "VIP석 A6" 에서 "A6"만 추출하거나 쉼표로 연결
+              const seatNumber = current.seat.split(" ").pop(); 
+              existing.seatList.push(seatNumber);
+              existing.totalPrice += current.price;
+              existing.ids.push(current.id); // 삭제를 위해 ID들도 모아둠
+              existing.count += 1;
+            } else {
+              // 처음 등장하는 공연이라면: 카드 뼈대 생성
+              acc.push({
+                ...current,
+                seatList: [current.seat.split(" ").pop()], // 좌석 번호만 모음
+                zoneName: current.seat.split(" "), // "VIP석" 추출
+                totalPrice: current.price,
+                ids: [current.id],
+                count: 1
+              });
+            }
+            return acc;
+          }, []);
+
+          setTickets(groupedData);
+        }
       } catch (error) {
         console.error("티켓 불러오기 에러:", error);
       } finally {
@@ -51,16 +82,22 @@ export default function MyTicketPage() {
     fetchMyTickets();
   }, []);
 
-  // 티켓 예매 취소 로직
-  const handleCancelTicket = async (ticketId: string, title: string) => {
-    const confirmCancel = window.confirm(`[${title}]\n예매를 정말 취소하시겠습니까?`);
+  // 🔥 2. 티켓 예매 취소 (뭉쳐진 티켓 전체 취소)
+  const handleCancelTicket = async (ids: string[], title: string) => {
+    const confirmCancel = window.confirm(`[${title}]\n선택하신 ${ids.length}매의 예매를 모두 취소하시겠습니까?`);
     if (!confirmCancel) return;
     
-    setIsDeleting(ticketId);
+    setIsDeleting(ids); // 첫 번째 ID로 로딩 표시
     try {
-      await deleteDoc(doc(db, "tickets", ticketId));
-      setTickets(prev => prev.filter(ticket => ticket.id !== ticketId));
-      alert("예매가 성공적으로 취소되었습니다.");
+      const { error } = await supabase
+        .from("bookings")
+        .delete()
+        .in("id", ids); // 모아둔 모든 ID 삭제
+
+      if (error) throw error;
+
+      setTickets(prev => prev.filter(t => !ids.includes(t.id)));
+      alert("성공적으로 취소되었습니다.");
     } catch (error) {
       console.error("취소 에러:", error);
       alert("취소 처리 중 문제가 발생했습니다.");
@@ -72,7 +109,7 @@ export default function MyTicketPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 pb-20 w-full animate-in fade-in duration-500 relative">
       
-      {/* 🚀 스마트 입장 QR 모달 (결합된 핵심 기능) */}
+      {/* 🚀 스마트 입장 QR 모달 */}
       {activeQr && (
         <div className="fixed inset-0 z-50 bg-gray-900/95 flex flex-col items-center justify-center p-5 animate-in fade-in zoom-in-95 duration-200">
           <button onClick={() => setActiveQr(null)} className="absolute top-6 right-6 text-white/70 hover:text-white transition">
@@ -87,17 +124,15 @@ export default function MyTicketPage() {
 
             <div className="mt-8 mb-6 text-center">
               <h2 className="text-xl font-extrabold text-gray-900 mb-1 leading-tight line-clamp-1">{activeQr.title}</h2>
-              <p className="text-gray-500 font-bold">{activeQr.seat}</p>
+              <p className="text-gray-500 font-bold">{activeQr.zoneName} {activeQr.seatList.join(", ")}</p>
             </div>
 
-            {/* ★ 가짜 아이콘 대신 "진짜 작동하는 QR코드" 삽입! */}
             <div className="w-56 h-56 bg-white rounded-2xl border-4 border-gray-100 p-2 relative overflow-hidden flex items-center justify-center shadow-inner">
               <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`[TICKET] CODE: ${activeQr.code} / SEAT: ${activeQr.seat}`)}`} 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`[TICKET] CODE: ${activeQr.code} / COUNT: ${activeQr.count}`)}`} 
                 alt="Ticket QR" 
                 className="w-full h-full object-contain mix-blend-multiply"
               />
-              {/* 스캐너 레이저 애니메이션 */}
               <div className="absolute left-0 top-0 w-full h-1 bg-melon-green shadow-[0_0_15px_rgba(0,205,60,0.8)] animate-[scan_2s_ease-in-out_infinite]" />
             </div>
 
@@ -106,19 +141,9 @@ export default function MyTicketPage() {
               <span className={qrTimer <= 3 ? "text-red-500" : "text-gray-800"}>00:{qrTimer < 10 ? `0${qrTimer}` : qrTimer}</span>
             </div>
             
-            <p className="text-[11px] text-gray-400 font-bold tracking-widest uppercase mt-4 mb-1">Ticket Code</p>
-            <p className="text-sm font-black text-gray-800 bg-gray-100 px-4 py-1.5 rounded-lg font-mono">
-              {activeQr.code}
+            <p className="text-sm font-black text-gray-800 bg-gray-100 px-4 py-1.5 rounded-lg font-mono mt-4">
+              입장 인원: {activeQr.count}명
             </p>
-
-            <div className="mt-6 bg-red-50 border border-red-100 rounded-xl p-4 w-full">
-              <div className="flex items-center gap-2 text-red-600 font-bold text-sm mb-1">
-                <Smartphone size={16} /> 캡처/공기계 입장 불가
-              </div>
-              <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                본 QR코드는 15초마다 갱신되며 화면 캡처본으로는 입장할 수 없습니다. <strong>공기계 로그인 시 스캐너에서 차단</strong>됩니다.
-              </p>
-            </div>
           </div>
         </div>
       )}
@@ -131,48 +156,49 @@ export default function MyTicketPage() {
         </div>
       </header>
 
-      {/* 메인 콘텐츠 (Grid 배치) */}
+      {/* 메인 콘텐츠 */}
       <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 mt-10">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-40 gap-4">
             <Loader2 className="animate-spin text-melon-green" size={50} />
-            <p className="font-bold text-gray-400 text-lg">나의 예매 내역을 불러오는 중...</p>
+            <p className="font-bold text-gray-400 text-lg">나의 예매 내역을 정리하는 중...</p>
           </div>
         ) : tickets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {tickets.map((ticket) => (
               <div key={ticket.id} className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden relative flex flex-col h-full hover:shadow-xl transition duration-300">
                 <div className="p-7 pb-6 border-b-2 border-dashed border-gray-200 relative flex-1">
-                  {/* 티켓 절취선 디자인 */}
                   <div className="absolute -bottom-3 -left-3 w-6 h-6 bg-gray-50 rounded-full border-r border-t border-gray-200 transform rotate-45" />
                   <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-gray-50 rounded-full border-l border-t border-gray-200 transform -rotate-45" />
                   
                   <div className="flex justify-between items-start mb-5">
-                    <span className="bg-melon-green/10 text-melon-green text-sm font-black px-3 py-1.5 rounded-md">{ticket.status || "결제완료"}</span>
-                    <span className="text-[12px] text-gray-400 font-bold tracking-widest">{ticket.code}</span>
+                    <span className="bg-melon-green/10 text-melon-green text-sm font-black px-3 py-1.5 rounded-md">결제완료</span>
+                    <span className="text-[12px] text-gray-400 font-bold tracking-widest">{ticket.count}매 묶음</span>
                   </div>
                   
                   <h2 className="text-2xl font-extrabold text-gray-900 leading-snug line-clamp-2 mb-4">{ticket.title}</h2>
                   <div className="flex flex-col gap-2 text-[15px] text-gray-500 font-bold">
-                    <div className="flex items-center gap-2"><Calendar size={16} className="text-gray-400"/> 2026.05.22 (금) 18:00</div>
-                    <div className="flex items-center gap-2 text-melon-green"><MapPin size={16} /> {ticket.seat}</div>
+                    <div className="flex items-center gap-2"><Calendar size={16} className="text-gray-400"/> {ticket.date}</div>
+                    <div className="flex items-center gap-2 text-melon-green">
+                      <MapPin size={16} /> {ticket.zoneName} {ticket.seatList.join(", ")}
+                    </div>
                   </div>
                 </div>
 
                 <div className="bg-gray-50 p-6 flex flex-col gap-4">
-                  <button onClick={() => setActiveQr(ticket)} className="w-full flex items-center justify-center gap-2 py-4 bg-gray-900 text-white font-bold text-lg rounded-xl hover:bg-gray-800 transition active:scale-[0.98] shadow-md">
-                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=TICKET`} alt="qr-icon" className="w-5 h-5 invert" /> 
-                    스마트 입장 QR 열기
+                  <button onClick={() => setActiveQr(ticket)} className="w-full flex items-center justify-center gap-2 py-4 bg-gray-900 text-white font-bold text-lg rounded-xl hover:bg-gray-800 transition shadow-md">
+                    <Smartphone size={20} /> 
+                    스마트 입장 QR 열기 ({ticket.count}매)
                   </button>
                   
                   <div className="flex justify-between items-center mt-2">
                     <div className="flex flex-col">
-                      <span className="text-sm text-gray-400 font-bold mb-1">결제 금액</span>
-                      <span className="text-xl font-black text-gray-900">{ticket.price?.toLocaleString()}원</span>
+                      <span className="text-sm text-gray-400 font-bold mb-1">총 결제 금액</span>
+                      <span className="text-xl font-black text-gray-900">{ticket.totalPrice.toLocaleString()}원</span>
                     </div>
                     
-                    <button onClick={() => handleCancelTicket(ticket.id, ticket.title)} disabled={isDeleting === ticket.id} className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-300 text-red-500 font-bold text-sm rounded-lg hover:bg-red-50 transition shadow-sm disabled:opacity-50">
-                      {isDeleting === ticket.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} 예매 취소
+                    <button onClick={() => handleCancelTicket(ticket.ids, ticket.title)} disabled={isDeleting === ticket.id} className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-300 text-red-500 font-bold text-sm rounded-lg hover:bg-red-50 transition shadow-sm disabled:opacity-50">
+                      {isDeleting === ticket.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} 전체 취소
                     </button>
                   </div>
                 </div>
@@ -188,7 +214,6 @@ export default function MyTicketPage() {
         )}
       </main>
 
-      {/* 스캐너 애니메이션 CSS */}
       <style dangerouslySetInnerHTML={{__html: `@keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }`}} />
     </div>
   );
