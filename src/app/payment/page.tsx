@@ -1,13 +1,13 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, CreditCard, Receipt, RefreshCw, QrCode } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CreditCard, Receipt, RefreshCw } from "lucide-react";
 
-// ★ Firebase 모듈
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../../lib/firebase";
+// 🔥 Supabase 설정 (lib 폴더의 인스턴스 사용)
+import { supabase } from "@/src/lib/superbase";
 
 // 가격표
 const PRICE_MAP: Record<string, number> = {
@@ -21,19 +21,21 @@ function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
+  const performanceId = searchParams.get('id') || "PF123456";
   const performanceTitle = searchParams.get('title') || "공연 정보 없음";
+  const selectedDate = searchParams.get('date') || "2026.05.22 (금) 18:00";
   const selectedZone = searchParams.get('zone') || "VIP석";
   
-  // ★ 다중 좌석 데이터 받기 (이전 코드 호환을 위해 seats, seat 둘 다 체크)
+  // 다중 좌석 데이터 받기 
   const seatsParam = searchParams.get('seats') || searchParams.get('seat') || "";
   const seatsArr = seatsParam ? seatsParam.split(",") : [];
   const seatCount = seatsArr.length > 0 ? seatsArr.length : 1;
   const seatInfo = seatsArr.length > 0 ? `${selectedZone} ${seatsArr.join(", ")}` : "좌석 정보 없음";
   
-  // ★ 결제 금액 및 포인트 세팅
+  // 결제 금액 및 포인트 세팅
   const unitPrice = PRICE_MAP[selectedZone] || 165000;
   const totalPrice = unitPrice * seatCount; 
-  const [balance, setBalance] = useState(5000000); // 500만 포인트 넉넉하게!
+  const [balance, setBalance] = useState(5000000); 
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
@@ -50,45 +52,46 @@ function PaymentContent() {
     try {
       const ticketCode = `AMT-${Math.floor(Math.random() * 1000000)}`;
 
-      // 1. Firebase Firestore 저장 (다중 좌석에 맞게 totalPrice, seatCount 추가)
-      const docRef = await addDoc(collection(db, "tickets"), {
-        title: performanceTitle,
-        seat: seatInfo,
-        seatCount: seatCount,
-        price: totalPrice,
-        code: ticketCode,
-        status: "결제완료",
-        createdAt: serverTimestamp(),
-        userId: "test-user-01", 
-      });
+      // Supabase에 데이터 저장하기 (좌석 개수만큼 쪼개서 개별 저장)
+      const insertData = seatsArr.map(seatId => ({
+        performance_id: performanceId, 
+        user_id: "test-user-01",       
+        title: performanceTitle,       
+        seat_id: seatId.trim(),        
+        seat: `${selectedZone} ${seatId.trim()}`, 
+        date: selectedDate,            
+        price: unitPrice,              
+        code: `AMT-${Math.floor(Math.random() * 1000000)}`, 
+        status: "결제완료"
+      }));
 
-      console.log("🔥 Firebase DB 저장 성공! 문서 ID: ", docRef.id);
+      // Supabase bookings 테이블에 배열 통째로 INSERT!
+      const { error } = await supabase
+        .from("bookings")
+        .insert(insertData);
 
-      // 2. QR 코드 데이터 생성 (QR 리더기가 무조건 인식하도록 깔끔한 영문/숫자 포맷팅)
+      if (error) {
+        throw error; // 에러를 강제로 catch 블록으로 던집니다!
+      }
+
+      console.log("🔥 Supabase DB 완벽 저장 성공!");
+
+      // QR 코드 데이터 생성 
       const qrText = `[TICKET] CODE: ${ticketCode} / SEATS: ${seatCount}`;
       const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrText)}`;
       setQrImageUrl(generatedQrUrl);
 
-      // 3. 결제 완료 상태 업데이트
+      // 결제 완료 상태 업데이트
       setBalance(prev => prev - totalPrice);
       setIsProcessing(false);
       setIsPaid(true);
 
-      // 4. 로컬 스토리지에 내 티켓 정보 저장
-      const newTicket = {
-        id: docRef.id, 
-        title: performanceTitle,
-        date: "2026.05.22 (금) 18:00", 
-        seat: seatInfo,
-        code: ticketCode,
-        qrUrl: generatedQrUrl
-      };
-      const existingTickets = JSON.parse(localStorage.getItem('myTickets') || '[]');
-      localStorage.setItem('myTickets', JSON.stringify([newTicket, ...existingTickets]));
-
-    } catch (error) {
-      console.error("Firebase 저장 에러:", error);
-      alert("서버 연결에 문제가 발생했습니다. 다시 시도해주세요.");
+    } catch (error: any) {
+      // 🔥 빈 껍데기({}) 대신 진짜 에러 메시지를 화면과 콘솔에 띄워줍니다!
+      console.error("🔥 진짜 에러 원인:", error.message || error);
+      console.error("🔥 에러 디테일:", error.details || "디테일 없음");
+      
+      alert(`DB 저장 실패: ${error.message || "알 수 없는 에러가 발생했습니다."}\n(개발자 도구 콘솔창을 확인해주세요)`);
       setIsProcessing(false);
     }
   };
@@ -101,19 +104,17 @@ function PaymentContent() {
         <p className="text-white/80 mb-10 text-sm">성공적으로 티켓이 발급되었습니다.</p>
         
         <div className="bg-white w-full max-w-sm rounded-3xl p-7 shadow-2xl relative">
-          
-          {/* ★ 스마트폰 카메라로 인식 가능한 QR 코드 렌더링 */}
           <div className="flex flex-col items-center justify-center mb-6">
             <div className="border-4 border-gray-100 p-3 rounded-2xl shadow-sm mb-2">
               <img src={qrImageUrl} alt="QR Code" className="w-36 h-36" />
             </div>
-            <p className="text-[10px] text-gray-400 font-bold uppercase">입장용 QR 코드</p>
+            <p className="text-[10px] text-gray-400 font-bold uppercase">입장용 임시 QR 코드</p>
           </div>
 
           <div className="border-b-2 border-dashed border-gray-100 pb-6 mb-6">
             <p className="text-xs text-gray-400 font-bold mb-1.5">예매 공연</p>
             <h2 className="text-xl font-extrabold text-gray-900 leading-tight line-clamp-2">{performanceTitle}</h2>
-            <p className="text-sm text-gray-500 mt-2.5">2026.05.22 (금) 18:00</p>
+            <p className="text-sm text-gray-500 mt-2.5">{selectedDate}</p>
             <p className="text-lg font-black text-melon-green mt-1">{seatInfo} ({seatCount}매)</p>
           </div>
           <div className="flex justify-between items-center mb-2">
@@ -150,7 +151,7 @@ function PaymentContent() {
           <div className="bg-gray-50 p-5 rounded-xl shadow-inner border border-gray-100">
             <p className="font-extrabold text-lg text-gray-900 leading-snug line-clamp-2">{performanceTitle}</p>
             <p className="text-sm text-melon-green font-black mt-2">좌석: {seatInfo} ({seatCount}매)</p>
-            <p className="text-xs text-gray-500 mt-1">2026.05.22 (금) 18:00</p>
+            <p className="text-xs text-gray-500 mt-1">{selectedDate}</p>
           </div>
         </section>
 
@@ -179,7 +180,7 @@ function PaymentContent() {
           {isProcessing ? (
             <>
               <RefreshCw className="animate-spin" size={20} />
-              서버에 안전하게 저장 중...
+              강력하게 서버 연결 중...
             </>
           ) : (
             `${totalPrice.toLocaleString()}원 결제하기`

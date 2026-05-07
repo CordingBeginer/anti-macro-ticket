@@ -1,11 +1,21 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
+interface Concert {
+  id: string;
+  title: string;
+  location: string;
+  imageUrl: string;
+  category: string;
+  [key: string]: unknown;
+}
+
 export default function AllConcertsPage() {
-  const [concerts, setConcerts] = useState<any[]>([]);
+  const [concerts, setConcerts] = useState<Concert[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,10 +25,10 @@ export default function AllConcertsPage() {
         const res = await fetch('/api/kopis');
         const result = await res.json();
         if (result.data) {
-          const sorted = result.data.sort((a: any, b: any) => b.id.localeCompare(a.id));
+          const sorted = result.data.sort((a: Concert, b: Concert) => b.id.localeCompare(a.id));
           setConcerts(sorted);
         }
-      } catch (err) {
+      } catch {
         console.error("데이터 로딩 실패");
       } finally {
         setLoading(false);

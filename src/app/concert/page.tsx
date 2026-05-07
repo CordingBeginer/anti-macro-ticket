@@ -1,11 +1,22 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Search, Loader2, Calendar, MapPin } from "lucide-react";
 
+interface Concert {
+  id: string;
+  title: string;
+  location: string;
+  imageUrl: string;
+  category: string;
+  date: string;
+  [key: string]: unknown;
+}
+
 export default function ConcertListPage() {
-  const [concerts, setConcerts] = useState<any[]>([]);
+  const [concerts, setConcerts] = useState<Concert[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 실시간 KOPIS 데이터 중 '대중음악'만 필터링해서 가져오기
@@ -17,12 +28,12 @@ export default function ConcertListPage() {
         const result = await res.json();
         if (result.data) {
           // KOPIS 카테고리가 '대중음악'인 것만 필터링
-          const popConcerts = result.data.filter((item: any) => 
+          const popConcerts = result.data.filter((item: Concert) => 
             item.category === "대중음악" || item.category === "콘서트"
           );
           setConcerts(popConcerts);
         }
-      } catch (err) {
+      } catch {
         console.error("콘서트 리스트 로딩 실패");
       } finally {
         setLoading(false);

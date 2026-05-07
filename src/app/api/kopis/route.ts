@@ -13,7 +13,7 @@ export async function GET() {
     const jsonObj = parser.parse(xmlData);
     const concerts = jsonObj.dbs?.db || [];
 
-    const formattedData = Array.isArray(concerts) ? concerts.map((item: any) => ({
+    const formattedData = Array.isArray(concerts) ? concerts.map((item: Record<string, unknown>) => ({
       id: item.mt20id,
       title: item.prfnm,
       date: `${item.prfpdfrom} ~ ${item.prfpdto}`,
