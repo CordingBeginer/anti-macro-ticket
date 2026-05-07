@@ -1,15 +1,124 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Tesseract from "tesseract.js";
 import { ArrowLeft, RefreshCw, CalendarDays, ShieldCheck, Armchair, Loader2 } from "lucide-react";
-import NaverMap from "../components/NaverMap";
-import Script from "next/script"; // 🔥 스크립트 미리 불러오기 도구
+import Script from "next/script";
 
+// ---------------------------------------------------------
+// 🗺️ 네이버 맵 컴포넌트 (방어 코드 탑재 완료 버전)
+// ---------------------------------------------------------
+// ---------------------------------------------------------
+// 🗺️ 네이버 맵 컴포넌트 (공식 문서 기본 예제 100% 반영 테스트용)
+// ---------------------------------------------------------
+function NaverMap({ lat, lng, facilityName }: { lat: number; lng: number; facilityName?: string }) {
+  
+  // 공식 문서의 지도 생성 함수
+  const initMap = () => {
+    // window.naver 객체가 로드되었는지 확인
+    if (typeof window !== "undefined" && window.naver && window.naver.maps) {
+      const position = new window.naver.maps.LatLng(lat, lng);
+      
+      // 1. 지도 옵션 설정 (공식 문서 방식)
+      const mapOptions = {
+          center: position,
+          zoom: 15
+      };
+      
+      // 2. id="map" 요소에 지도 생성 (공식 문서 방식)
+      const map = new window.naver.maps.Map('map', mapOptions);
+      
+      // 3. 공연장 위치 마커(핑) 추가
+      const marker = new window.naver.maps.Marker({
+          position: position,
+          map: map,
+          cursor: 'pointer'
+      });
+
+      // 4. 마커 클릭 시 네이버 지도 기본 검색(홈)으로 연결
+      if (facilityName) {
+          const searchUrl = `https://map.naver.com/v5/search/${encodeURIComponent(facilityName)}`;
+          
+          window.naver.maps.Event.addListener(marker, 'click', function() {
+              window.open(searchUrl, '_blank');
+          });
+
+          // 5. 공연장 이름 및 지도 홈 유도 정보창 추가
+          const infoWindow = new window.naver.maps.InfoWindow({
+              content: `
+                <div onclick="window.open('${searchUrl}', '_blank')" 
+                     style="padding:12px 15px; font-weight:900; color:#000; text-align:center; border:2px solid #00CD3C; border-radius:10px; background:white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 5px; cursor:pointer; transition: transform 0.2s;">
+                  ${facilityName}
+                  <div style="font-size:11px; color:#00CD3C; margin-top:5px; display:flex; align-items:center; justify-content:center; gap:4px; padding-top:5px; border-top:1px solid #eee;">
+                    <span>🧭 네이버 지도 홈으로 보기</span>
+                  </div>
+                </div>`,
+              borderWidth: 0,
+              disableAnchor: true,
+              backgroundColor: "transparent",
+              pixelOffset: new window.naver.maps.Point(0, -10)
+          });
+          infoWindow.open(map, marker);
+      }
+      
+      console.log("지도 로드 및 마커 표시 완료!");
+    } else {
+      console.log("네이버 객체를 찾을 수 없습니다.");
+    }
+  };
+
+  return (
+    // 공식 문서의 DOM 요소 지정 방식 <div id="map" style="width:100%;height:400px;"></div> 반영
+    <div style={{ width: "100%", height: "400px", marginTop: "16px", borderRadius: "1.5rem", overflow: "hidden" }}>
+      
+      {/* 공식 문서의 <script> 태그를 Next.js 방식으로 호출 */}
+      <Script
+        strategy="afterInteractive"
+        src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_CLIENT_ID || 'snlcvi9s8n'}`}
+        onReady={initMap}
+      />
+      
+      {/* 지도가 그려질 필수 DOM 요소 */}
+      <div id="map" style={{ width: "100%", height: "100%" }}></div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------
+// 💺 좌석 선택 및 메인 로직
+// ---------------------------------------------------------
 const ROWS = Array.of('A', 'B', 'C', 'D', 'E', 'F');
 const SOLD_OUT_SEATS = Array.of('A3', 'C7', 'D10', 'D11', 'F1', 'F2');
 const MOCK_DATES = Array.of("05.22 (금)", "05.23 (토)", "05.24 (일)");
+
+const getPerformanceDates = (dateStr: string) => {
+  if (!dateStr || dateStr.includes('정보 없음')) return MOCK_DATES;
+  try {
+    const [start, end] = dateStr.split(' ~ ');
+    const startDate = new Date(start.replace(/\./g, '-'));
+    const endDate = end ? new Date(end.replace(/\./g, '-')) : startDate;
+    
+    if (isNaN(startDate.getTime())) return MOCK_DATES;
+
+    const dates = [];
+    const current = new Date(startDate);
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    
+    // 최대 6개의 날짜만 표시하여 UI가 너무 길어지지 않도록 방지
+    while (current <= endDate && dates.length < 6) {
+      const month = String(current.getMonth() + 1).padStart(2, '0');
+      const date = String(current.getDate()).padStart(2, '0');
+      const day = days[current.getDay()];
+      dates.push(`${month}.${date} (${day})`);
+      current.setDate(current.getDate() + 1);
+    }
+    return dates.length > 0 ? dates : MOCK_DATES;
+  } catch {
+    return MOCK_DATES;
+  }
+};
 
 const NORMAL_QUIZ = Array.of(
   { q: "숫자 '6' 다음 숫자는?", a: "7" },
@@ -32,23 +141,36 @@ function SeatSelectionContent() {
   const id = searchParams.get('id');
   const performanceTitle = searchParams.get('title') || "공연 정보 없음";
 
-  // KOPIS 상세 정보 상태
-  const [showInfo, setShowInfo] = useState<any>(null);
+  interface ShowInfo {
+    poster: string;
+    title: string;
+    date: string;
+    venue: string;
+    cast: string;
+    price: string;
+    la: string;
+    lo: string;
+    adres: string;
+    telno: string;
+    parkinglot: string;
+    detailImages: string[];
+  }
+
+  const [showInfo, setShowInfo] = useState<ShowInfo | null>(null);
+  const [activeTab, setActiveTab] = useState<'info' | 'date' | 'venue'>('info');
   const [isDetailLoading, setIsDetailLoading] = useState(true);
 
-  // 예매 스텝 및 상태
   const [step, setStep] = useState<"DATE" | "CAPTCHA" | "SEAT">("DATE");
-  const [selectedDate, setSelectedDate] = useState(MOCK_DATES);
+  const [selectedDate, setSelectedDate] = useState(MOCK_DATES[0]);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date(2026, 5)); // 기본 2026년 6월 (KOPIS 데이터 로드 시 업데이트)
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   
-  // 캔버스 및 AI 인증 상태
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentQuiz, setCurrentQuiz] = useState({ q: '', a: '' });
   const [isDrawing, setIsDrawing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false); 
 
-  // KOPIS 상세 정보 불러오기
   useEffect(() => {
     if (!id) return;
     const fetchDetailData = async () => {
@@ -58,6 +180,19 @@ function SeatSelectionContent() {
         const result = await res.json();
         if (result.data) {
           setShowInfo(result.data);
+          
+          // 공연 시작일을 달력 기본 달로 설정
+          if (result.data.date) {
+            try {
+              const startStr = result.data.date.split(' ~ ')[0].replace(/\./g, '-');
+              const d = new Date(startStr);
+              if (!isNaN(d.getTime())) {
+                setCalendarMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          }
         }
       } catch (error) {
         console.error("상세 정보 로딩 실패:", error);
@@ -68,7 +203,6 @@ function SeatSelectionContent() {
     fetchDetailData();
   }, [id]);
 
-  // 캔버스 초기화
   const resetCanvas = () => {
     const randomQuiz = NORMAL_QUIZ[Math.floor(Math.random() * NORMAL_QUIZ.length)];
     setCurrentQuiz(randomQuiz);
@@ -89,17 +223,16 @@ function SeatSelectionContent() {
     if (step === "CAPTCHA") resetCanvas();
   }, [step]);
 
-  // 캔버스 드로잉 로직
-  const getCoords = (e: any) => {
+  const getCoords = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches.clientX : e.clientX;
-    const clientY = e.touches ? e.touches.clientY : e.clientY;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     return { x: clientX - rect.left, y: clientY - rect.top };
   };
 
-  const startDrawing = (e: any) => {
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDrawing(true);
     const { x, y } = getCoords(e);
     const ctx = canvasRef.current?.getContext('2d');
@@ -113,7 +246,7 @@ function SeatSelectionContent() {
     }
   };
 
-  const draw = (e: any) => {
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing) return;
     if (e.cancelable) e.preventDefault(); 
     const { x, y } = getCoords(e);
@@ -126,7 +259,6 @@ function SeatSelectionContent() {
     }
   };
 
-  // Tesseract AI 판독 로직
   const verifyDrawing = async () => {
     if (!canvasRef.current) return;
     setIsAnalyzing(true); 
@@ -147,7 +279,8 @@ function SeatSelectionContent() {
       const result = await Tesseract.recognize(imageURL, 'eng', {
         tessedit_char_whitelist: '0123456789', 
         tessedit_pageseg_mode: '10' 
-      });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
 
       const aiResult = result.data.text.replace(/[^0-9]/g, ''); 
       setIsAnalyzing(false); 
@@ -189,6 +322,19 @@ function SeatSelectionContent() {
     router.push(`/payment?${params.toString()}`);
   };
 
+  // 유효한 예약 가능 날짜 범위 계산
+  let validStart: Date | null = null;
+  let validEnd: Date | null = null;
+  if (showInfo && showInfo.date && !showInfo.date.includes('정보 없음')) {
+    try {
+      const [startStr, endStr] = showInfo.date.split(' ~ ');
+      validStart = new Date(startStr.replace(/\./g, '-'));
+      validStart.setHours(0, 0, 0, 0);
+      validEnd = endStr ? new Date(endStr.replace(/\./g, '-')) : new Date(validStart);
+      validEnd.setHours(23, 59, 59, 999);
+    } catch(e) {}
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 w-full text-gray-900">
       <header className="flex justify-center p-5 bg-white sticky top-0 z-10 border-b border-gray-200 w-full shadow-sm">
@@ -205,7 +351,6 @@ function SeatSelectionContent() {
         {step === "DATE" && (
           <div className="flex flex-col gap-8 animate-in fade-in duration-300 text-left">
             
-            {/* 1. KOPIS 상세 정보 및 지도 영역 */}
             <section className="bg-white p-6 md:p-8 rounded-2xl border border-gray-200 shadow-sm">
               {isDetailLoading || !showInfo ? (
                 <div className="animate-pulse">
@@ -237,32 +382,136 @@ function SeatSelectionContent() {
                       <p className="flex pb-2"><span className="font-extrabold text-gray-400 w-20 shrink-0">가격</span> <span className="font-semibold text-gray-800">{showInfo.price}</span></p>
                     </div>
                   </div>
-                  <div>
-                    <h2 className="text-xl font-extrabold mb-4 border-b-2 border-gray-900 pb-2 inline-block">공연장 위치 안내</h2>
-                    <NaverMap address={showInfo.venue} />
+                  
+                  {/* 탭 메뉴 */}
+                  <div className="flex border-b border-gray-200 mt-8 mb-6">
+                    <button 
+                      onClick={() => setActiveTab('info')}
+                      className={`flex-1 py-4 text-center font-bold text-[15px] md:text-lg border-b-4 transition-colors ${activeTab === 'info' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+                    >소개</button>
+                    <button 
+                      onClick={() => setActiveTab('date')}
+                      className={`flex-1 py-4 text-center font-bold text-[15px] md:text-lg border-b-4 transition-colors ${activeTab === 'date' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+                    >관람일/예매</button>
+                    <button 
+                      onClick={() => setActiveTab('venue')}
+                      className={`flex-1 py-4 text-center font-bold text-[15px] md:text-lg border-b-4 transition-colors ${activeTab === 'venue' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+                    >공연장 안내</button>
                   </div>
+
+                  {/* 탭 내용 - 소개 */}
+                  {activeTab === 'info' && (
+                    <div className="animate-in fade-in duration-300">
+                      {showInfo.detailImages && showInfo.detailImages.length > 0 ? (
+                        <div className="flex flex-col gap-0 items-center bg-white border border-gray-100 rounded-2xl overflow-hidden">
+                          {showInfo.detailImages.map((imgUrl, idx) => (
+                            <img key={idx} src={imgUrl} alt={`상세 이미지 ${idx + 1}`} className="w-full object-contain" />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-20 text-center text-gray-400 bg-gray-50 rounded-2xl border border-gray-100">
+                          <p>등록된 상세 소개 이미지가 없습니다.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 탭 내용 - 관람일/예매 */}
+                  {activeTab === 'date' && (
+                    <div className="animate-in fade-in duration-300">
+                      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+                        {/* 관람일 (Calendar) */}
+                        <div className="p-6 border-b border-gray-100">
+                          <h3 className="font-extrabold text-lg mb-6 text-gray-800">관람일</h3>
+                          
+                          <div className="flex items-center justify-center gap-6 mb-6">
+                            <button onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))} className="text-gray-300 hover:text-gray-500 font-bold text-xl px-2">&lt;</button>
+                            <span className="font-extrabold text-xl w-32 text-center">{calendarMonth.getFullYear()}. {String(calendarMonth.getMonth() + 1).padStart(2, '0')}</span>
+                            <button onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))} className="text-gray-300 hover:text-gray-500 font-bold text-xl px-2">&gt;</button>
+                          </div>
+                          
+                          <div className="grid grid-cols-7 text-center mb-2 bg-gray-50 py-2 rounded-lg">
+                            {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
+                              <div key={d} className={`text-sm font-bold ${i === 0 ? 'text-red-400' : 'text-gray-500'}`}>{d}</div>
+                            ))}
+                          </div>
+                          
+                          <div className="grid grid-cols-7 gap-y-2 text-center mt-4">
+                            {Array.from({ length: 42 }, (_, i) => {
+                              const dayNum = i - new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay() + 1;
+                              const isValid = dayNum > 0 && dayNum <= new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate();
+                              if (!isValid) return <div key={i} className="h-10"></div>;
+                              
+                              const dateStr = `${String(calendarMonth.getMonth() + 1).padStart(2, '0')}.${String(dayNum).padStart(2, '0')} (${['일', '월', '화', '수', '목', '금', '토'][i % 7]})`;
+                              const isSelected = selectedDate === dateStr;
+                              
+                              // 선택 가능 여부 확인
+                              const currentDateObj = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), dayNum);
+                              const isSelectable = validStart && validEnd ? (currentDateObj >= validStart && currentDateObj <= validEnd) : true;
+                              
+                              return (
+                                <div key={i} className="flex justify-center items-center h-10">
+                                  <button 
+                                    onClick={() => isSelectable && setSelectedDate(dateStr)}
+                                    disabled={!isSelectable}
+                                    className={`w-10 h-10 flex items-center justify-center rounded-full font-bold text-[15px] transition-all ${
+                                      isSelected ? 'bg-green-500 text-white shadow-md' : (isSelectable ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed')
+                                    }`}
+                                  >
+                                    {dayNum}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* 회차 */}
+                        <div className="p-6 bg-white">
+                          <h3 className="font-extrabold text-lg mb-4 text-gray-800">회차</h3>
+                          <button className="border border-green-500 text-green-600 font-bold px-6 py-3 rounded-xl bg-green-50 shadow-sm">
+                            1회 18:00
+                          </button>
+                          <p className="text-sm text-gray-500 mt-4 font-medium">잔여석 안내 서비스를 제공하지 않습니다.</p>
+                        </div>
+                      </section>
+
+                      <button onClick={() => setStep("CAPTCHA")} className="w-full py-5 bg-green-500 text-white font-black text-lg rounded-xl shadow-lg hover:bg-green-600 transition flex justify-center items-center">
+                        <span>예매하기</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 탭 내용 - 공연장 안내 */}
+                  {activeTab === 'venue' && (
+                    <div className="animate-in fade-in duration-300">
+                      <h2 className="text-xl font-extrabold mb-2 text-gray-900">공연장 위치 안내</h2>
+                      <p className="text-sm font-bold text-gray-500 mb-4 flex items-center gap-2">📍 {showInfo.venue}</p>
+                      
+                      <NaverMap 
+                        lat={Number(showInfo.la) || 37.479} 
+                        lng={Number(showInfo.lo) || 127.014} 
+                        facilityName={showInfo.venue} 
+                      />
+
+                      <div className="mt-5 bg-gray-50 rounded-2xl p-6 border border-gray-200 shadow-sm">
+                        <h3 className="font-extrabold text-gray-800 mb-4 text-lg">오시는 길 및 시설 안내</h3>
+                        <ul className="text-[14px] text-gray-700 flex flex-col gap-3 font-medium">
+                          <li className="flex"><span className="w-20 font-extrabold text-gray-400 shrink-0">주소</span> <span>{showInfo.adres || '정보 없음'}</span></li>
+                          <li className="flex"><span className="w-20 font-extrabold text-gray-400 shrink-0">전화번호</span> <span>{showInfo.telno || '정보 없음'}</span></li>
+                          <li className="flex"><span className="w-20 font-extrabold text-gray-400 shrink-0">주차안내</span> <span>{showInfo.parkinglot || '정보 없음'}</span></li>
+                          <li className="flex"><span className="w-20 font-extrabold text-gray-400 shrink-0">대중교통</span> 
+                            <span className="text-[#00CD3C] font-bold cursor-pointer flex items-center gap-1 hover:underline" onClick={() => window.open(`https://map.naver.com/p/directions/-/${showInfo.lo || 127.014},${showInfo.la || 37.479},${encodeURIComponent(showInfo.venue)}/-/transit?c=15,0,0,0,dh`, '_blank')}>
+                              네이버 지도로 교통편/길찾기 검색하기 🧭
+                            </span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </section>
-
-            {/* 2. 관람일 선택 영역 */}
-            <section className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-              <h3 className="font-bold mb-5 flex items-center gap-2 text-lg">
-                <CalendarDays size={20} className="text-green-500" /> 관람일 선택
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {MOCK_DATES.map(date => (
-                  <button key={date} onClick={() => setSelectedDate(date)}
-                    className={`py-4 rounded-xl border-2 font-bold transition-all ${
-                      selectedDate === date ? 'bg-green-500 text-white border-green-500' : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'
-                    }`}>{date}</button>
-                ))}
-              </div>
-            </section>
-
-            <button onClick={() => setStep("CAPTCHA")} className="w-full py-5 bg-green-500 text-white font-black text-lg rounded-xl shadow-lg hover:bg-green-600 transition flex justify-center items-center">
-              <span>좌석 선택하기</span>
-            </button>
           </div>
         )}
 
@@ -367,7 +616,6 @@ function SeatSelectionContent() {
   );
 }
 
-// url 파라미터를 사용하므로 Suspense로 감싸주어야 합니다.
 export default function SeatSelectionPage() {
   return (
     <Suspense fallback={
@@ -376,11 +624,6 @@ export default function SeatSelectionPage() {
         <p className="font-bold text-gray-500 animate-pulse">안전하게 공연 데이터를 불러오는 중입니다...</p>
       </div>
     }>
-      {/* 🔥 핵심: KOPIS 로딩하는 동안 백그라운드에서 지도를 미리 다운로드! (속도 대폭 향상) */}
-      <Script
-        src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=wm2szfaw99&submodules=geocoder"
-        strategy="afterInteractive"
-      />
       <SeatSelectionContent />
     </Suspense>
   );

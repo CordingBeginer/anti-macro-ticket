@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, Suspense } from "react";
@@ -5,12 +6,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, CreditCard, Receipt, RefreshCw } from "lucide-react";
 
-// 🔥 직접 알려주신 완벽한 주소와 키를 꽂아넣었습니다!
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = "https://aezicrrmxqylummyocnr.supabase.co";
-const supabaseKey = "sb_publishable_7qxr403vHuriZdo4n1rxhQ_9u-FhgpR"; 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// 🔥 Supabase 설정 (lib 폴더의 인스턴스 사용)
+import { supabase } from "@/src/lib/superbase";
 
 // 가격표
 const PRICE_MAP: Record<string, number> = {

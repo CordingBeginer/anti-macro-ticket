@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,20 +6,31 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Ticket, Trash2, Loader2, Calendar, MapPin, AlertCircle, ShieldCheck, Smartphone, X, RefreshCw } from "lucide-react";
 
-// 🔥 Supabase 설정
-import { createClient } from "@supabase/supabase-js";
+// 🔥 Supabase 설정 (lib 폴더의 인스턴스 사용)
+import { supabase } from "@/src/lib/superbase";
 
-const supabaseUrl = "https://aezicrrmxqylummyocnr.supabase.co";
-const supabaseKey = "sb_publishable_7qxr403vHuriZdo4n1rxhQ_9u-FhgpR"; 
-const supabase = createClient(supabaseUrl, supabaseKey);
+interface TicketItem {
+  id: string;
+  title: string;
+  date: string;
+  seat: string;
+  price: number;
+  seatList: string[];
+  zoneName: string;
+  totalPrice: number;
+  ids: string[];
+  count: number;
+  code?: string;
+  [key: string]: unknown;
+}
 
 export default function MyTicketPage() {
   const router = useRouter();
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const [activeQr, setActiveQr] = useState<any | null>(null);
+  const [activeQr, setActiveQr] = useState<TicketItem | null>(null);
   const [qrTimer, setQrTimer] = useState(15);
 
   useEffect(() => {
@@ -45,8 +57,8 @@ export default function MyTicketPage() {
         if (error) throw error;
         
         if (data) {
-          // 💡 핵심: 데이터 그룹화 로직 (공연 제목 + 날짜가 같으면 뭉친다!)
-          const groupedData = data.reduce((acc: any[], current: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const groupedData = data.reduce((acc: TicketItem[], current: any) => {
             const existing = acc.find(item => item.title === current.title && item.date === current.date);
 
             if (existing) {
@@ -73,8 +85,9 @@ export default function MyTicketPage() {
 
           setTickets(groupedData);
         }
-      } catch (error) {
-        console.error("티켓 불러오기 에러:", error);
+      } catch (error: any) {
+        console.error("🔥 티켓 불러오기 에러:", error.message || error);
+        alert(`티켓을 불러오는데 실패했습니다: ${error.message || '알 수 없는 에러'}\n(Supabase 설정이나 네트워크 상태를 확인해주세요)`);
       } finally {
         setLoading(false);
       }
@@ -83,11 +96,11 @@ export default function MyTicketPage() {
   }, []);
 
   // 🔥 2. 티켓 예매 취소 (뭉쳐진 티켓 전체 취소)
-  const handleCancelTicket = async (ids: string[], title: string) => {
+  const handleCancelTicket = async (ids: string[], title: string, mainId: string) => {
     const confirmCancel = window.confirm(`[${title}]\n선택하신 ${ids.length}매의 예매를 모두 취소하시겠습니까?`);
     if (!confirmCancel) return;
     
-    setIsDeleting(ids); // 첫 번째 ID로 로딩 표시
+    setIsDeleting(mainId); // 첫 번째 ID로 로딩 표시
     try {
       const { error } = await supabase
         .from("bookings")
@@ -98,9 +111,9 @@ export default function MyTicketPage() {
 
       setTickets(prev => prev.filter(t => !ids.includes(t.id)));
       alert("성공적으로 취소되었습니다.");
-    } catch (error) {
-      console.error("취소 에러:", error);
-      alert("취소 처리 중 문제가 발생했습니다.");
+    } catch (error: any) {
+      console.error("🔥 취소 에러:", error.message || error);
+      alert(`취소 처리 중 문제가 발생했습니다: ${error.message || '알 수 없는 에러'}`);
     } finally {
       setIsDeleting(null);
     }
@@ -197,7 +210,7 @@ export default function MyTicketPage() {
                       <span className="text-xl font-black text-gray-900">{ticket.totalPrice.toLocaleString()}원</span>
                     </div>
                     
-                    <button onClick={() => handleCancelTicket(ticket.ids, ticket.title)} disabled={isDeleting === ticket.id} className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-300 text-red-500 font-bold text-sm rounded-lg hover:bg-red-50 transition shadow-sm disabled:opacity-50">
+                    <button onClick={() => handleCancelTicket(ticket.ids, ticket.title, ticket.id)} disabled={isDeleting === ticket.id} className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-300 text-red-500 font-bold text-sm rounded-lg hover:bg-red-50 transition shadow-sm disabled:opacity-50">
                       {isDeleting === ticket.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} 전체 취소
                     </button>
                   </div>
