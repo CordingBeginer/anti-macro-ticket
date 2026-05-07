@@ -377,7 +377,7 @@ export default function SeatSelectionPage() {
         2. <></> (Fragment) 안에 Script와 Suspense를 함께 넣어 문법 오류 해결
       */}
       <Script
-        src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=wm2szfaw99&submodules=geocoder"
+        src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=wm2szfaw99&submodules=geocoder"
         strategy="beforeInteractive"
       />
       

@@ -27,7 +27,7 @@ export default function NaverMap({ address }: { address: string }) {
 
           // 🔥 수정 포인트: response.v2.addresses는 배열입니다. 필수!
           if (status === naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
-            const item = response.v2.addresses; // 첫 번째 결과물 선택
+            const item = response.v2.addresses[0]; // 첫 번째 결과물 선택
             lat = parseFloat(item.y);
             lng = parseFloat(item.x);
           } else {
