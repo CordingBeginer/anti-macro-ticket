@@ -26,7 +26,6 @@ export default function Home() {
   const [searchKeyword, setSearchKeyword] = useState("");
 
   useEffect(() => {
-    // 3.5초 동안 스플래시 화면 유지 후 메인으로 전환
     const timer = setTimeout(() => setShowSplash(false), 3500);
     return () => clearTimeout(timer);
   }, []);
@@ -167,7 +166,7 @@ export default function Home() {
                     <Link key={concert.id} href={`/seat?id=${concert.id}&title=${encodeURIComponent(concert.title)}`} className="group flex flex-col cursor-pointer">
                       <div className="w-full aspect-[3/4.2] bg-gray-100 rounded-2xl overflow-hidden mb-4 shadow-md relative transform transition duration-500 group-hover:-translate-y-2 border border-gray-200 flex items-center justify-center">
                         <img src={concert.imageUrl} alt={concert.title} className="w-full h-full object-contain transition duration-700 group-hover:scale-105" onError={(e) => e.currentTarget.src = "https://cdn.pixabay.com/photo/2017/01/10/03/54/icon-1968254_1280.png"} />
-                        {/* 🚨 수정 완료: split("(") 적용 완료! */}
+                        
                         <div className="absolute top-3 left-3 bg-[#00CD3C] text-white text-[12px] font-black px-3 py-1.5 rounded-full shadow-sm">
                           {concert.category ? concert.category.split("(")[0] : "공연"}
                         </div>

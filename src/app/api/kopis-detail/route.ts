@@ -10,18 +10,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 💡 국장님 인증키 적용!
     const SERVICE_KEY = "ade2e6f2d55b4bd389d7b284c946934c";
     const url = `http://kopis.or.kr/openApi/restful/pblprfr/${id}?service=${SERVICE_KEY}`;
     
     const res = await fetch(url);
     const xmlData = await res.text();
 
-    // XML을 JSON으로 변환 (에러 나던 정규식은 싹 지웠습니다!)
     const parser = new XMLParser();
     const jsonObj = parser.parse(xmlData);
     
-    // KOPIS 상세 데이터 구조 파악
     const item = jsonObj.dbs?.db;
 
     if (!item) {
@@ -34,7 +31,6 @@ export async function GET(request: Request) {
     let telno = "";
     let parkinglot = "정보 없음";
 
-    // 공연 시설 ID(mt10id)가 있다면 시설 상세 정보를 조회하여 좌표(la, lo)를 가져옵니다.
     if (item.mt10id) {
       try {
         const facilityRes = await fetch(`http://kopis.or.kr/openApi/restful/prfplc/${item.mt10id}?service=${SERVICE_KEY}`);

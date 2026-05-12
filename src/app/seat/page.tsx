@@ -400,8 +400,7 @@ function SeatSelectionContent() {
                       <p className="flex pb-2"><span className="font-extrabold text-gray-400 w-20 shrink-0">가격</span> <span className="font-semibold text-gray-800">{showInfo.price}</span></p>
                     </div>
                   </div>
-                  
-                  
+
                   <div className="flex border-b border-gray-200 mt-8 mb-6">
                     <button 
                       onClick={() => setActiveTab('info')}
@@ -417,7 +416,6 @@ function SeatSelectionContent() {
                     >공연장 안내</button>
                   </div>
 
-                  
                   {activeTab === 'info' && (
                     <div className="animate-in fade-in duration-300">
                       {showInfo.detailImages && showInfo.detailImages.length > 0 ? (
@@ -434,7 +432,6 @@ function SeatSelectionContent() {
                     </div>
                   )}
 
-                  
                   {activeTab === 'date' && (
                     <div className="animate-in fade-in duration-300">
                       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
@@ -483,7 +480,6 @@ function SeatSelectionContent() {
                           </div>
                         </div>
 
-                        
                         <div className="p-6 bg-white">
                           <h3 className="font-extrabold text-lg mb-4 text-gray-800">회차</h3>
                           <button className="border border-green-500 text-green-600 font-bold px-6 py-3 rounded-xl bg-green-50 shadow-sm">
@@ -499,7 +495,6 @@ function SeatSelectionContent() {
                     </div>
                   )}
 
-                  
                   {activeTab === 'venue' && (
                     <div className="animate-in fade-in duration-300">
                       <h2 className="text-xl font-extrabold mb-2 text-gray-900">공연장 위치 안내</h2>
@@ -607,8 +602,7 @@ function SeatSelectionContent() {
                 ))}
               </div>
               <div className={`w-full bg-gray-50 p-6 rounded-xl overflow-x-auto flex flex-col items-center border transition-opacity duration-300 ${selectedZone ? "opacity-100" : "opacity-30 pointer-events-none"}`}>
-                 
-                 
+
                  {venueType === "SMALL" && (
                  <div className="min-w-[550px] flex flex-col items-center">
                     <div className="w-full h-8 bg-gray-300 rounded-b-2xl text-gray-500 font-black text-[10px] flex items-center justify-center mb-16 tracking-[1em]">STAGE</div>
@@ -636,7 +630,6 @@ function SeatSelectionContent() {
                  </div>
                  )}
 
-                 
                  {venueType === "ARENA" && (
                  <div className="min-w-[750px] flex flex-col items-center">
                     <div className="w-2/3 h-12 bg-gray-800 rounded-b-3xl text-gray-200 font-black text-[12px] flex items-center justify-center mb-16 tracking-[2em] shadow-lg">MAIN STAGE</div>
@@ -667,7 +660,6 @@ function SeatSelectionContent() {
                  </div>
                  )}
 
-                 
                  {venueType === "STANDING" && (
                  <div className="w-full max-w-[600px] flex flex-col items-center">
                     <div className="w-full h-8 bg-gray-300 rounded-b-2xl text-gray-500 font-black text-[10px] flex items-center justify-center mb-8 tracking-[1em]">STAGE</div>

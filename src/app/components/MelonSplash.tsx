@@ -7,7 +7,6 @@ export default function MelonSplash() {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // 2초 뒤에 스르륵 사라지게 설정
     const timer = setTimeout(() => setIsVisible(false), 2000);
     return () => clearTimeout(timer);
   }, []);

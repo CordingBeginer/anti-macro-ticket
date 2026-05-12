@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Ticket, Trash2, Loader2, Calendar, MapPin, AlertCircle, ShieldCheck, Smartphone, X, RefreshCw } from "lucide-react";
 
-// 🔥 Supabase 설정 (lib 폴더의 인스턴스 사용)
 import { supabase } from "@/src/lib/superbase";
 
 interface TicketItem {
@@ -44,7 +43,6 @@ export default function MyTicketPage() {
     return () => clearInterval(interval);
   }, [activeQr]);
 
-  // 🔥 1. Supabase에서 티켓 불러오기 + 뭉치기 로직
   useEffect(() => {
     const fetchMyTickets = async () => {
       try {
@@ -62,19 +60,16 @@ export default function MyTicketPage() {
             const existing = acc.find(item => item.title === current.title && item.date === current.date);
 
             if (existing) {
-              // 이미 같은 공연 카드가 있다면: 좌석 번호만 배열에 추가하고 가격 합산
-              // "VIP석 A6" 에서 "A6"만 추출하거나 쉼표로 연결
               const seatNumber = current.seat.split(" ").pop(); 
               existing.seatList.push(seatNumber);
               existing.totalPrice += current.price;
-              existing.ids.push(current.id); // 삭제를 위해 ID들도 모아둠
+              existing.ids.push(current.id);
               existing.count += 1;
             } else {
-              // 처음 등장하는 공연이라면: 카드 뼈대 생성
               acc.push({
                 ...current,
-                seatList: [current.seat.split(" ").pop()], // 좌석 번호만 모음
-                zoneName: current.seat.split(" "), // "VIP석" 추출
+                seatList: [current.seat.split(" ").pop()],
+                zoneName: current.seat.split(" "),
                 totalPrice: current.price,
                 ids: [current.id],
                 count: 1
@@ -95,17 +90,16 @@ export default function MyTicketPage() {
     fetchMyTickets();
   }, []);
 
-  // 🔥 2. 티켓 예매 취소 (뭉쳐진 티켓 전체 취소)
   const handleCancelTicket = async (ids: string[], title: string, mainId: string) => {
     const confirmCancel = window.confirm(`[${title}]\n선택하신 ${ids.length}매의 예매를 모두 취소하시겠습니까?`);
     if (!confirmCancel) return;
     
-    setIsDeleting(mainId); // 첫 번째 ID로 로딩 표시
+    setIsDeleting(mainId);
     try {
       const { error } = await supabase
         .from("bookings")
         .delete()
-        .in("id", ids); // 모아둔 모든 ID 삭제
+        .in("id", ids);
 
       if (error) throw error;
 
@@ -121,8 +115,7 @@ export default function MyTicketPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 pb-20 w-full animate-in fade-in duration-500 relative">
-      
-      {/* 🚀 스마트 입장 QR 모달 */}
+
       {activeQr && (
         <div className="fixed inset-0 z-50 bg-gray-900/95 flex flex-col items-center justify-center p-5 animate-in fade-in zoom-in-95 duration-200">
           <button onClick={() => setActiveQr(null)} className="absolute top-6 right-6 text-white/70 hover:text-white transition">
@@ -161,7 +154,6 @@ export default function MyTicketPage() {
         </div>
       )}
 
-      {/* 헤더 */}
       <header className="bg-white border-b border-gray-200 w-full sticky top-0 z-20 shadow-sm">
         <div className="max-w-[1440px] w-full mx-auto px-6 py-5 flex items-center">
           <button onClick={() => router.push('/')} className="mr-5 text-gray-800 hover:text-melon-green transition"><ArrowLeft size={28} /></button>
@@ -169,7 +161,6 @@ export default function MyTicketPage() {
         </div>
       </header>
 
-      {/* 메인 콘텐츠 */}
       <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 mt-10">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-40 gap-4">

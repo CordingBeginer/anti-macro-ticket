@@ -6,10 +6,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, CreditCard, Receipt, RefreshCw } from "lucide-react";
 
-// 🔥 Supabase 설정 (lib 폴더의 인스턴스 사용)
 import { supabase } from "@/src/lib/superbase";
 
-// 가격표
 const PRICE_MAP: Record<string, number> = {
   "VIP석": 165000,
   "R석": 143000,
@@ -26,13 +24,11 @@ function PaymentContent() {
   const selectedDate = searchParams.get('date') || "2026.05.22 (금) 18:00";
   const selectedZone = searchParams.get('zone') || "VIP석";
   
-  // 다중 좌석 데이터 받기 
   const seatsParam = searchParams.get('seats') || searchParams.get('seat') || "";
   const seatsArr = seatsParam ? seatsParam.split(",") : [];
   const seatCount = seatsArr.length > 0 ? seatsArr.length : 1;
   const seatInfo = seatsArr.length > 0 ? `${selectedZone} ${seatsArr.join(", ")}` : "좌석 정보 없음";
   
-  // 결제 금액 및 포인트 세팅
   const unitPrice = PRICE_MAP[selectedZone] || 165000;
   const totalPrice = unitPrice * seatCount; 
   const [balance, setBalance] = useState(5000000); 
@@ -52,7 +48,6 @@ function PaymentContent() {
     try {
       const ticketCode = `AMT-${Math.floor(Math.random() * 1000000)}`;
 
-      // Supabase에 데이터 저장하기 (좌석 개수만큼 쪼개서 개별 저장)
       const insertData = seatsArr.map(seatId => ({
         performance_id: performanceId, 
         user_id: "test-user-01",       
@@ -65,29 +60,25 @@ function PaymentContent() {
         status: "결제완료"
       }));
 
-      // Supabase bookings 테이블에 배열 통째로 INSERT!
       const { error } = await supabase
         .from("bookings")
         .insert(insertData);
 
       if (error) {
-        throw error; // 에러를 강제로 catch 블록으로 던집니다!
+        throw error;
       }
 
       console.log("🔥 Supabase DB 완벽 저장 성공!");
 
-      // QR 코드 데이터 생성 
       const qrText = `[TICKET] CODE: ${ticketCode} / SEATS: ${seatCount}`;
       const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrText)}`;
       setQrImageUrl(generatedQrUrl);
 
-      // 결제 완료 상태 업데이트
       setBalance(prev => prev - totalPrice);
       setIsProcessing(false);
       setIsPaid(true);
 
     } catch (error: any) {
-      // 🔥 빈 껍데기({}) 대신 진짜 에러 메시지를 화면과 콘솔에 띄워줍니다!
       console.error("🔥 진짜 에러 원인:", error.message || error);
       console.error("🔥 에러 디테일:", error.details || "디테일 없음");
       

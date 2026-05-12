@@ -9,12 +9,11 @@ export default function AuthHeader() {
   return (
     <header className="flex justify-between items-center p-6 bg-white border-b border-gray-100 max-w-[1440px] mx-auto w-full">
       <div className="flex items-center gap-3">
-        {/* 원형 아이콘 */}
+        
         <div className="w-11 h-11 bg-[#4CAF50] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm">
           {isLoggedIn ? "충" : "?"}
         </div>
-        
-        {/* 관리자 뱃지 스타일 */}
+
         {isLoggedIn ? (
           <div className="bg-[#F0FFF4] px-5 py-2.5 rounded-full border border-[#D1FAE5] shadow-sm">
             <span className="text-gray-700 font-bold text-lg">관리자 </span>
@@ -25,7 +24,6 @@ export default function AuthHeader() {
         )}
       </div>
 
-      {/* 로그인/로그아웃 버튼 */}
       <button
         onClick={() => setIsLoggedIn(!isLoggedIn)}
         className="flex items-center gap-2 text-[#7B7B8B] hover:text-gray-900 transition font-bold text-xl"
