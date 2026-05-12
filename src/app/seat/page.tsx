@@ -128,12 +128,40 @@ const NORMAL_QUIZ = Array.of(
   { q: "영(0) 다음 숫자는?", a: "1" }
 );
 
+type VenueType = "SMALL" | "ARENA" | "STANDING";
+
+function getVenueType(venueName: string): VenueType {
+  if (!venueName) return "SMALL";
+  if (/체육관|스타디움|돔|아레나|경기장|올림픽|Arena|Stadium|Dome/i.test(venueName)) {
+    return "ARENA";
+  }
+  if (/라이브홀|클럽|롤링홀|V-HALL|예스24라이브홀|스탠딩|페스티벌/i.test(venueName)) {
+    return "STANDING";
+  }
+  return "SMALL";
+}
+
 const TICKET_ZONES = [
   { name: "VIP석", price: "165,000원" },
   { name: "R석", price: "143,000원" },
   { name: "S석", price: "121,000원" },
   { name: "A석", price: "99,000원" }
 ];
+
+const ARENA_ZONES = [
+  { name: "플로어석", price: "165,000원" },
+  { name: "1층 지정석", price: "143,000원" },
+  { name: "2층 지정석", price: "121,000원" },
+  { name: "3층 지정석", price: "99,000원" }
+];
+
+const STANDING_ZONES = [
+  { name: "스탠딩 A구역", price: "132,000원" },
+  { name: "스탠딩 B구역", price: "132,000원" },
+  { name: "지정석 C구역", price: "110,000원" },
+  { name: "지정석 D구역", price: "110,000원" }
+];
+
 
 function SeatSelectionContent() {
   const router = useRouter();
@@ -553,15 +581,36 @@ function SeatSelectionContent() {
           </div>
         )}
 
-        {step === "SEAT" && (
+        {step === "SEAT" && (() => {
+          const venueType = showInfo ? getVenueType(showInfo.venue) : "SMALL";
+          const currentZones = venueType === "ARENA" ? ARENA_ZONES 
+                             : venueType === "STANDING" ? STANDING_ZONES 
+                             : TICKET_ZONES;
+
+          return (
           <div className="flex flex-col gap-8 animate-in slide-in-from-bottom-5 duration-300 text-left">
             <section className="bg-white p-6 md:p-8 rounded-2xl border border-gray-200 shadow-sm">
               <h3 className="font-extrabold text-xl mb-6">등급 및 좌석 선택</h3>
+              
+              <div className="mb-4">
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 ${
+                  venueType === 'ARENA' ? 'bg-blue-100 text-blue-700' : 
+                  venueType === 'STANDING' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'
+                }`}>
+                  {venueType === 'ARENA' ? '대형 공연장 (아레나/체육관) 레이아웃' : 
+                   venueType === 'STANDING' ? '스탠딩 공연장 레이아웃' : '소극장 레이아웃'}
+                </span>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-                {TICKET_ZONES.map((zone) => (
+                {currentZones.map((zone) => (
                   <button key={zone.name} onClick={() => setSelectedZone(zone.name)}
                     className={`py-4 px-5 rounded-xl font-bold border-2 text-left flex justify-between items-center transition-all ${
-                      selectedZone === zone.name ? "border-green-500 bg-green-50 text-green-600" : "border-gray-50 bg-gray-50 text-gray-700 hover:border-gray-200"
+                      selectedZone === zone.name ? 
+                        (venueType === 'ARENA' ? "border-blue-500 bg-blue-50 text-blue-600" : 
+                         venueType === 'STANDING' ? "border-purple-500 bg-purple-50 text-purple-600" : 
+                         "border-green-500 bg-green-50 text-green-600") 
+                      : "border-gray-50 bg-gray-50 text-gray-700 hover:border-gray-200"
                     }`}>
                     <span className="flex items-center gap-2"><Armchair size={18}/> {zone.name}</span>
                     <span className="text-[10px] opacity-50">{zone.price}</span>
@@ -569,6 +618,9 @@ function SeatSelectionContent() {
                 ))}
               </div>
               <div className={`w-full bg-gray-50 p-6 rounded-xl overflow-x-auto flex flex-col items-center border transition-opacity duration-300 ${selectedZone ? "opacity-100" : "opacity-30 pointer-events-none"}`}>
+                 
+                 {/* SMALL 레이아웃 (기존) */}
+                 {venueType === "SMALL" && (
                  <div className="min-w-[550px] flex flex-col items-center">
                     <div className="w-full h-8 bg-gray-300 rounded-b-2xl text-gray-500 font-black text-[10px] flex items-center justify-center mb-16 tracking-[1em]">STAGE</div>
                     <div className="flex flex-col gap-2.5">
@@ -593,6 +645,64 @@ function SeatSelectionContent() {
                         ))}
                     </div>
                  </div>
+                 )}
+
+                 {/* ARENA 레이아웃 */}
+                 {venueType === "ARENA" && (
+                 <div className="min-w-[750px] flex flex-col items-center">
+                    <div className="w-2/3 h-12 bg-gray-800 rounded-b-3xl text-gray-200 font-black text-[12px] flex items-center justify-center mb-16 tracking-[2em] shadow-lg">MAIN STAGE</div>
+                    <div className="flex flex-col gap-2.5">
+                        {Array.from({length: 10}).map((_, rIdx) => {
+                          const row = String.fromCharCode(65 + rIdx); // A ~ J
+                          return (
+                          <div key={row} className="flex gap-2 items-center">
+                            <span className="w-6 text-xs font-black text-gray-400 text-center">{row}</span>
+                            {Array.from({length: 20}).map((_, i) => {
+                              const id = `${row}${i+1}`;
+                              const isSoldOut = SOLD_OUT_SEATS.includes(id) || (rIdx > 5 && i % 4 === 0);
+                              const isSelected = selectedSeats.includes(id); 
+                              // 중간 통로 띄우기
+                              const marginRight = (i === 9) ? 'mr-8' : '';
+                              
+                              return (
+                                <button key={id} onClick={() => toggleSeat(id)} disabled={isSoldOut}
+                                  className={`w-7 h-7 rounded-[4px] text-[8px] font-bold transition-all ${marginRight} ${
+                                    isSelected ? 'bg-black text-white scale-110 shadow-lg' : isSoldOut ? 'bg-gray-200 cursor-not-allowed' : 'bg-blue-400 hover:bg-blue-500 text-white'
+                                  }`}>
+                                  {i+1}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )})}
+                    </div>
+                 </div>
+                 )}
+
+                 {/* STANDING 레이아웃 */}
+                 {venueType === "STANDING" && (
+                 <div className="w-full max-w-[600px] flex flex-col items-center">
+                    <div className="w-full h-8 bg-gray-300 rounded-b-2xl text-gray-500 font-black text-[10px] flex items-center justify-center mb-8 tracking-[1em]">STAGE</div>
+                    <p className="text-sm font-bold text-gray-600 mb-6 border-b pb-2">선택 가능한 입장 대기 번호</p>
+                    <div className="grid grid-cols-4 md:grid-cols-5 gap-3 w-full">
+                        {Array.from({length: 30}).map((_, i) => {
+                          const num = i * 13 + 7; // 약간 불규칙해 보이도록 생성
+                          const id = `입장번호 ${num}번`;
+                          const isSoldOut = i % 5 === 0 || i % 7 === 0;
+                          const isSelected = selectedSeats.includes(id);
+                          return (
+                            <button key={id} onClick={() => toggleSeat(id)} disabled={isSoldOut}
+                              className={`py-3 px-1 rounded-lg text-[11px] font-bold transition-all border ${
+                                isSelected ? 'bg-purple-500 border-purple-500 text-white shadow-md scale-105' : isSoldOut ? 'bg-gray-100 border-gray-100 text-gray-300 cursor-not-allowed' : 'bg-white border-gray-200 hover:border-purple-300 text-gray-700'
+                              }`}>
+                              {num}번
+                            </button>
+                          );
+                        })}
+                    </div>
+                 </div>
+                 )}
+
               </div>
             </section>
 
@@ -610,7 +720,8 @@ function SeatSelectionContent() {
                </div>
             </div>
           </div>
-        )}
+          );
+        })()}
       </main>
     </div>
   );
