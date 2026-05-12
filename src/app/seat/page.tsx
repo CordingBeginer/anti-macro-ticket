@@ -14,21 +14,30 @@ import Script from "next/script";
 // 🗺️ 네이버 맵 컴포넌트 (공식 문서 기본 예제 100% 반영 테스트용)
 // ---------------------------------------------------------
 function NaverMap({ lat, lng, facilityName }: { lat: number; lng: number; facilityName?: string }) {
-  
+  const mapElement = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<any>(null);
+
   // 공식 문서의 지도 생성 함수
   const initMap = () => {
     // window.naver 객체가 로드되었는지 확인
-    if (typeof window !== "undefined" && window.naver && window.naver.maps) {
+    if (typeof window !== "undefined" && window.naver && window.naver.maps && mapElement.current) {
       const position = new window.naver.maps.LatLng(lat, lng);
       
+      // 이미 지도가 생성되어 있다면 중심 좌표만 이동시키고 새로 만들지 않음 (렉 방지)
+      if (mapInstance.current) {
+        mapInstance.current.setCenter(position);
+        return;
+      }
+
       // 1. 지도 옵션 설정 (공식 문서 방식)
       const mapOptions = {
           center: position,
           zoom: 15
       };
       
-      // 2. id="map" 요소에 지도 생성 (공식 문서 방식)
-      const map = new window.naver.maps.Map('map', mapOptions);
+      // 2. mapElement.current 요소에 지도 생성 (React 방식)
+      const map = new window.naver.maps.Map(mapElement.current, mapOptions);
+      mapInstance.current = map;
       
       // 3. 공연장 위치 마커(핑) 추가
       const marker = new window.naver.maps.Marker({
@@ -65,23 +74,26 @@ function NaverMap({ lat, lng, facilityName }: { lat: number; lng: number; facili
       
       console.log("지도 로드 및 마커 표시 완료!");
     } else {
-      console.log("네이버 객체를 찾을 수 없습니다.");
+      console.log("네이버 객체 또는 지도 요소를 찾을 수 없습니다.");
     }
   };
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.naver && window.naver.maps) {
+      initMap();
+    } else {
+      // If not immediately available, retry after a short delay
+      const timer = setTimeout(() => initMap(), 300);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lat, lng, facilityName]);
+
   return (
-    // 공식 문서의 DOM 요소 지정 방식 <div id="map" style="width:100%;height:400px;"></div> 반영
+    // 공식 문서의 DOM 요소 지정 방식을 React ref로 개선
     <div style={{ width: "100%", height: "400px", marginTop: "16px", borderRadius: "1.5rem", overflow: "hidden" }}>
-      
-      {/* 공식 문서의 <script> 태그를 Next.js 방식으로 호출 */}
-      <Script
-        strategy="afterInteractive"
-        src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_CLIENT_ID || 'snlcvi9s8n'}`}
-        onReady={initMap}
-      />
-      
       {/* 지도가 그려질 필수 DOM 요소 */}
-      <div id="map" style={{ width: "100%", height: "100%" }}></div>
+      <div ref={mapElement} style={{ width: "100%", height: "100%" }}></div>
     </div>
   );
 }
@@ -729,24 +741,13 @@ function SeatSelectionContent() {
 
 export default function SeatSelectionPage() {
   return (
-    <>
-      {/* 🔥 핵심 수정 사항:
-        1. strategy를 "beforeInteractive"로 변경하여 인증 실패(지도가 떴다 사라짐) 방지
-        2. <></> (Fragment) 안에 Script와 Suspense를 함께 넣어 문법 오류 해결
-      */}
-      <Script
-        src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=wm2szfaw99&submodules=geocoder"
-        strategy="beforeInteractive"
-      />
-      
-      <Suspense fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-          <Loader2 className="animate-spin text-green-500 mb-4" size={50} />
-          <p className="font-bold text-gray-500 animate-pulse">안전하게 공연 데이터를 불러오는 중입니다...</p>
-        </div>
-      }>
-        <SeatSelectionContent />
-      </Suspense>
-    </>
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin text-green-500 mb-4" size={50} />
+        <p className="font-bold text-gray-500 animate-pulse">안전하게 공연 데이터를 불러오는 중입니다...</p>
+      </div>
+    }>
+      <SeatSelectionContent />
+    </Suspense>
   );
 }
