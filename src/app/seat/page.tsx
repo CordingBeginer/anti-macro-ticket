@@ -7,46 +7,33 @@ import Tesseract from "tesseract.js";
 import { ArrowLeft, RefreshCw, CalendarDays, ShieldCheck, Armchair, Loader2 } from "lucide-react";
 import Script from "next/script";
 
-// ---------------------------------------------------------
-// 🗺️ 네이버 맵 컴포넌트 (방어 코드 탑재 완료 버전)
-// ---------------------------------------------------------
-// ---------------------------------------------------------
-// 🗺️ 네이버 맵 컴포넌트 (공식 문서 기본 예제 100% 반영 테스트용)
-// ---------------------------------------------------------
 function NaverMap({ lat, lng, facilityName }: { lat: number; lng: number; facilityName?: string }) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
 
-  // 공식 문서의 지도 생성 함수
   const initMap = () => {
-    // window.naver 객체가 로드되었는지 확인
     if (typeof window !== "undefined" && window.naver && window.naver.maps && mapElement.current) {
       const position = new window.naver.maps.LatLng(lat, lng);
       
-      // 이미 지도가 생성되어 있다면 중심 좌표만 이동시키고 새로 만들지 않음 (렉 방지)
       if (mapInstance.current) {
         mapInstance.current.setCenter(position);
         return;
       }
 
-      // 1. 지도 옵션 설정 (공식 문서 방식)
       const mapOptions = {
           center: position,
           zoom: 15
       };
       
-      // 2. mapElement.current 요소에 지도 생성 (React 방식)
       const map = new window.naver.maps.Map(mapElement.current, mapOptions);
       mapInstance.current = map;
       
-      // 3. 공연장 위치 마커(핑) 추가
       const marker = new window.naver.maps.Marker({
           position: position,
           map: map,
           cursor: 'pointer'
       });
 
-      // 4. 마커 클릭 시 네이버 지도 기본 검색(홈)으로 연결
       if (facilityName) {
           const searchUrl = `https://map.naver.com/v5/search/${encodeURIComponent(facilityName)}`;
           
@@ -54,7 +41,6 @@ function NaverMap({ lat, lng, facilityName }: { lat: number; lng: number; facili
               window.open(searchUrl, '_blank');
           });
 
-          // 5. 공연장 이름 및 지도 홈 유도 정보창 추가
           const infoWindow = new window.naver.maps.InfoWindow({
               content: `
                 <div onclick="window.open('${searchUrl}', '_blank')" 
@@ -90,17 +76,13 @@ function NaverMap({ lat, lng, facilityName }: { lat: number; lng: number; facili
   }, [lat, lng, facilityName]);
 
   return (
-    // 공식 문서의 DOM 요소 지정 방식을 React ref로 개선
     <div style={{ width: "100%", height: "400px", marginTop: "16px", borderRadius: "1.5rem", overflow: "hidden" }}>
-      {/* 지도가 그려질 필수 DOM 요소 */}
+      
       <div ref={mapElement} style={{ width: "100%", height: "100%" }}></div>
     </div>
   );
 }
 
-// ---------------------------------------------------------
-// 💺 좌석 선택 및 메인 로직
-// ---------------------------------------------------------
 const ROWS = Array.of('A', 'B', 'C', 'D', 'E', 'F');
 const SOLD_OUT_SEATS = Array.of('A3', 'C7', 'D10', 'D11', 'F1', 'F2');
 const MOCK_DATES = Array.of("05.22 (금)", "05.23 (토)", "05.24 (일)");
@@ -118,7 +100,6 @@ const getPerformanceDates = (dateStr: string) => {
     const current = new Date(startDate);
     const days = ['일', '월', '화', '수', '목', '금', '토'];
     
-    // 최대 6개의 날짜만 표시하여 UI가 너무 길어지지 않도록 방지
     while (current <= endDate && dates.length < 6) {
       const month = String(current.getMonth() + 1).padStart(2, '0');
       const date = String(current.getDate()).padStart(2, '0');
@@ -174,7 +155,6 @@ const STANDING_ZONES = [
   { name: "지정석 D구역", price: "110,000원" }
 ];
 
-
 function SeatSelectionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -202,7 +182,7 @@ function SeatSelectionContent() {
 
   const [step, setStep] = useState<"DATE" | "CAPTCHA" | "SEAT">("DATE");
   const [selectedDate, setSelectedDate] = useState(MOCK_DATES[0]);
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date(2026, 5)); // 기본 2026년 6월 (KOPIS 데이터 로드 시 업데이트)
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date(2026, 5));
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   
@@ -221,7 +201,6 @@ function SeatSelectionContent() {
         if (result.data) {
           setShowInfo(result.data);
           
-          // 공연 시작일을 달력 기본 달로 설정
           if (result.data.date) {
             try {
               const startStr = result.data.date.split(' ~ ')[0].replace(/\./g, '-');
@@ -362,7 +341,6 @@ function SeatSelectionContent() {
     router.push(`/payment?${params.toString()}`);
   };
 
-  // 유효한 예약 가능 날짜 범위 계산
   let validStart: Date | null = null;
   let validEnd: Date | null = null;
   if (showInfo && showInfo.date && !showInfo.date.includes('정보 없음')) {
@@ -423,7 +401,7 @@ function SeatSelectionContent() {
                     </div>
                   </div>
                   
-                  {/* 탭 메뉴 */}
+                  
                   <div className="flex border-b border-gray-200 mt-8 mb-6">
                     <button 
                       onClick={() => setActiveTab('info')}
@@ -439,7 +417,7 @@ function SeatSelectionContent() {
                     >공연장 안내</button>
                   </div>
 
-                  {/* 탭 내용 - 소개 */}
+                  
                   {activeTab === 'info' && (
                     <div className="animate-in fade-in duration-300">
                       {showInfo.detailImages && showInfo.detailImages.length > 0 ? (
@@ -456,11 +434,11 @@ function SeatSelectionContent() {
                     </div>
                   )}
 
-                  {/* 탭 내용 - 관람일/예매 */}
+                  
                   {activeTab === 'date' && (
                     <div className="animate-in fade-in duration-300">
                       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-                        {/* 관람일 (Calendar) */}
+                        
                         <div className="p-6 border-b border-gray-100">
                           <h3 className="font-extrabold text-lg mb-6 text-gray-800">관람일</h3>
                           
@@ -485,7 +463,6 @@ function SeatSelectionContent() {
                               const dateStr = `${String(calendarMonth.getMonth() + 1).padStart(2, '0')}.${String(dayNum).padStart(2, '0')} (${['일', '월', '화', '수', '목', '금', '토'][i % 7]})`;
                               const isSelected = selectedDate === dateStr;
                               
-                              // 선택 가능 여부 확인
                               const currentDateObj = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), dayNum);
                               const isSelectable = validStart && validEnd ? (currentDateObj >= validStart && currentDateObj <= validEnd) : true;
                               
@@ -506,7 +483,7 @@ function SeatSelectionContent() {
                           </div>
                         </div>
 
-                        {/* 회차 */}
+                        
                         <div className="p-6 bg-white">
                           <h3 className="font-extrabold text-lg mb-4 text-gray-800">회차</h3>
                           <button className="border border-green-500 text-green-600 font-bold px-6 py-3 rounded-xl bg-green-50 shadow-sm">
@@ -522,7 +499,7 @@ function SeatSelectionContent() {
                     </div>
                   )}
 
-                  {/* 탭 내용 - 공연장 안내 */}
+                  
                   {activeTab === 'venue' && (
                     <div className="animate-in fade-in duration-300">
                       <h2 className="text-xl font-extrabold mb-2 text-gray-900">공연장 위치 안내</h2>
@@ -631,7 +608,7 @@ function SeatSelectionContent() {
               </div>
               <div className={`w-full bg-gray-50 p-6 rounded-xl overflow-x-auto flex flex-col items-center border transition-opacity duration-300 ${selectedZone ? "opacity-100" : "opacity-30 pointer-events-none"}`}>
                  
-                 {/* SMALL 레이아웃 (기존) */}
+                 
                  {venueType === "SMALL" && (
                  <div className="min-w-[550px] flex flex-col items-center">
                     <div className="w-full h-8 bg-gray-300 rounded-b-2xl text-gray-500 font-black text-[10px] flex items-center justify-center mb-16 tracking-[1em]">STAGE</div>
@@ -659,7 +636,7 @@ function SeatSelectionContent() {
                  </div>
                  )}
 
-                 {/* ARENA 레이아웃 */}
+                 
                  {venueType === "ARENA" && (
                  <div className="min-w-[750px] flex flex-col items-center">
                     <div className="w-2/3 h-12 bg-gray-800 rounded-b-3xl text-gray-200 font-black text-[12px] flex items-center justify-center mb-16 tracking-[2em] shadow-lg">MAIN STAGE</div>
@@ -673,7 +650,6 @@ function SeatSelectionContent() {
                               const id = `${row}${i+1}`;
                               const isSoldOut = SOLD_OUT_SEATS.includes(id) || (rIdx > 5 && i % 4 === 0);
                               const isSelected = selectedSeats.includes(id); 
-                              // 중간 통로 띄우기
                               const marginRight = (i === 9) ? 'mr-8' : '';
                               
                               return (
@@ -691,14 +667,14 @@ function SeatSelectionContent() {
                  </div>
                  )}
 
-                 {/* STANDING 레이아웃 */}
+                 
                  {venueType === "STANDING" && (
                  <div className="w-full max-w-[600px] flex flex-col items-center">
                     <div className="w-full h-8 bg-gray-300 rounded-b-2xl text-gray-500 font-black text-[10px] flex items-center justify-center mb-8 tracking-[1em]">STAGE</div>
                     <p className="text-sm font-bold text-gray-600 mb-6 border-b pb-2">선택 가능한 입장 대기 번호</p>
                     <div className="grid grid-cols-4 md:grid-cols-5 gap-3 w-full">
                         {Array.from({length: 30}).map((_, i) => {
-                          const num = i * 13 + 7; // 약간 불규칙해 보이도록 생성
+                          const num = i * 13 + 7;
                           const id = `입장번호 ${num}번`;
                           const isSoldOut = i % 5 === 0 || i % 7 === 0;
                           const isSelected = selectedSeats.includes(id);
