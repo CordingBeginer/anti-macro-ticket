@@ -4,7 +4,7 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, CreditCard, Receipt, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CreditCard, Receipt, RefreshCw, Bot, ShieldCheck, AlertCircle } from "lucide-react";
 
 import { supabase } from "@/src/lib/superbase";
 
@@ -37,13 +37,29 @@ function PaymentContent() {
   const [isPaid, setIsPaid] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
 
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: 'ai_analyzing' | 'ai_success' | 'error' | 'balance_error';
+    title: string;
+    message: string;
+  }>({ isOpen: false, type: 'ai_analyzing', title: '', message: '' });
+
   const handlePayment = async () => {
     if (balance < totalPrice) {
-      alert("잔액이 부족합니다.");
+      setModalState({ isOpen: true, type: 'balance_error', title: '잔액 부족', message: '보유하신 포인트가 부족합니다.' });
       return;
     }
 
     setIsProcessing(true);
+    
+    // AI 판독 시뮬레이션
+    setModalState({ isOpen: true, type: 'ai_analyzing', title: 'AI 행동 패턴 분석 중...', message: '비정상적인 매크로 접근인지\n확인하고 있습니다.' });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setModalState({ isOpen: true, type: 'ai_success', title: 'AI 판독 완료', message: '정상적인 사용자로 확인되었습니다!\n결제를 진행합니다.' });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setModalState(prev => ({ ...prev, isOpen: false }));
     
     try {
       const ticketCode = `AMT-${Math.floor(Math.random() * 1000000)}`;
@@ -82,7 +98,12 @@ function PaymentContent() {
       console.error("🔥 진짜 에러 원인:", error.message || error);
       console.error("🔥 에러 디테일:", error.details || "디테일 없음");
       
-      alert(`DB 저장 실패: ${error.message || "알 수 없는 에러가 발생했습니다."}\n(개발자 도구 콘솔창을 확인해주세요)`);
+      setModalState({ 
+        isOpen: true, 
+        type: 'error', 
+        title: 'DB 저장 실패', 
+        message: `${error.message || "알 수 없는 에러가 발생했습니다."}\n\n(Supabase 연결을 확인해주세요)`
+      });
       setIsProcessing(false);
     }
   };
@@ -178,6 +199,45 @@ function PaymentContent() {
           )}
         </button>
       </main>
+
+      {/* 커스텀 AI & 에러 모달 */}
+      {modalState.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col items-center text-center">
+            
+            {modalState.type === 'ai_analyzing' && (
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-5 relative">
+                <Bot size={40} className="text-blue-500 animate-pulse" />
+                <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            
+            {modalState.type === 'ai_success' && (
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-5">
+                <ShieldCheck size={40} className="text-green-500 animate-in zoom-in duration-300" />
+              </div>
+            )}
+            
+            {(modalState.type === 'error' || modalState.type === 'balance_error') && (
+              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-5">
+                <AlertCircle size={40} className="text-red-500 animate-in duration-300" />
+              </div>
+            )}
+
+            <h3 className="text-xl font-black text-gray-900 mb-2 whitespace-pre-wrap">{modalState.title}</h3>
+            <p className="text-gray-500 text-sm mb-6 whitespace-pre-wrap leading-relaxed">{modalState.message}</p>
+
+            {(modalState.type === 'error' || modalState.type === 'balance_error') && (
+              <button 
+                onClick={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+                className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg active:scale-95"
+              >
+                확인
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

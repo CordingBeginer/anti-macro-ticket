@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="120" fill="#00CD3C" />
+  <g transform="translate(256, 256) rotate(-45) translate(-256, -256)">
+    <rect x="96" y="156" width="320" height="200" rx="24" fill="white" />
+    <circle cx="96" cy="256" r="36" fill="#00CD3C" />
+    <circle cx="416" cy="256" r="36" fill="#00CD3C" />
+    <path d="M 196 206 L 256 186 L 316 206 L 316 256 C 316 306, 256 336, 256 336 C 256 336, 196 306, 196 256 Z" fill="#00CD3C" />
+    <text x="220" y="248" font-family="Arial, sans-serif" font-weight="900" font-size="40" fill="white" text-anchor="middle">A</text>
+    <text x="292" y="248" font-family="Arial, sans-serif" font-weight="900" font-size="40" fill="white" text-anchor="middle">M</text>
+    <text x="256" y="296" font-family="Arial, sans-serif" font-weight="900" font-size="40" fill="white" text-anchor="middle">T</text>
+  </g>
+</svg>

@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Tesseract from "tesseract.js";
-import { ArrowLeft, RefreshCw, CalendarDays, ShieldCheck, Armchair, Loader2 } from "lucide-react";
+import { ArrowLeft, RefreshCw, CalendarDays, ShieldCheck, Armchair, Loader2, Bot, AlertCircle } from "lucide-react";
 import Script from "next/script";
 
 function NaverMap({ lat, lng, facilityName }: { lat: number; lng: number; facilityName?: string }) {
@@ -191,6 +191,13 @@ function SeatSelectionContent() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false); 
 
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: 'ai_success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({ isOpen: false, type: 'warning', title: '', message: '' });
+
   useEffect(() => {
     if (!id) return;
     const fetchDetailData = async () => {
@@ -305,16 +312,19 @@ function SeatSelectionContent() {
       setIsAnalyzing(false); 
 
       if (aiResult === currentQuiz.a) {
-        alert(`AI 보안 인증 성공! (AI가 [${aiResult}]로 완벽히 판독했습니다)`);
-        setStep("SEAT");
+        setModalState({ isOpen: true, type: 'ai_success', title: 'AI 보안 인증 성공!', message: `AI가 [${aiResult}]로 완벽히 판독했습니다.\n좌석 선택 단계로 이동합니다.` });
+        setTimeout(() => {
+          setModalState(prev => ({ ...prev, isOpen: false }));
+          setStep("SEAT");
+        }, 1500);
       } else {
-        alert(`앗! AI 판독결과: [ ${aiResult || "인식불가"} ]\n정답(${currentQuiz.a})이 아닙니다. 다시 한번 그려주세요!`);
+        setModalState({ isOpen: true, type: 'error', title: '매크로 의심 감지', message: `앗! AI 판독결과: [ ${aiResult || "인식불가"} ]\n정답(${currentQuiz.a})이 아닙니다.\n다시 한번 그려주세요!` });
         resetCanvas(); 
       }
     } catch (err) {
       console.error("AI 인식 에러:", err);
       setIsAnalyzing(false);
-      alert("AI 인식 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setModalState({ isOpen: true, type: 'error', title: '인식 오류', message: 'AI 인식 중 오류가 발생했습니다.\n다시 시도해주세요.' });
     }
   };
 
@@ -323,7 +333,7 @@ function SeatSelectionContent() {
       setSelectedSeats(selectedSeats.filter(seat => seat !== id));
     } else {
       if (selectedSeats.length >= 8) {
-        alert("좌석은 최대 8개까지만 예매 가능합니다.");
+        setModalState({ isOpen: true, type: 'warning', title: '예매 제한', message: '좌석은 최대 8개까지만 예매 가능합니다.' });
         return;
       }
       setSelectedSeats([...selectedSeats, id]);
@@ -702,6 +712,44 @@ function SeatSelectionContent() {
           </div>
           );
         })()}
+
+        {/* 커스텀 AI & 에러 모달 */}
+        {modalState.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col items-center text-center">
+              
+              {modalState.type === 'ai_success' && (
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-5">
+                  <ShieldCheck size={40} className="text-green-500 animate-in zoom-in duration-300" />
+                </div>
+              )}
+              
+              {modalState.type === 'error' && (
+                <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-5">
+                  <Bot size={40} className="text-red-500 animate-pulse duration-300" />
+                </div>
+              )}
+
+              {modalState.type === 'warning' && (
+                <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-5">
+                  <AlertCircle size={40} className="text-orange-500 animate-in duration-300" />
+                </div>
+              )}
+
+              <h3 className="text-xl font-black text-gray-900 mb-2 whitespace-pre-wrap">{modalState.title}</h3>
+              <p className="text-gray-500 text-sm mb-6 whitespace-pre-wrap leading-relaxed">{modalState.message}</p>
+
+              {modalState.type !== 'ai_success' && (
+                <button 
+                  onClick={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+                  className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg active:scale-95"
+                >
+                  확인
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

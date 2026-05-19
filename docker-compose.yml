@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  anti-macro-ticket:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anti-macro-ticket-app
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
