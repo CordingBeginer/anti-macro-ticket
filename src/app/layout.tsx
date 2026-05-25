@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Script from "next/script";
 import { AuthProvider } from "@/src/app/components/AuthProvider";
+import LandscapeBlocker from "@/src/app/components/LandscapeBlocker";
 
 export const metadata: Metadata = {
   title: "Anti-Macro Ticket",
@@ -21,6 +22,7 @@ export default function RootLayout({
       <body className="bg-gray-50 text-gray-900 w-full min-h-screen m-0 p-0 overflow-x-hidden">
         <AuthProvider>
           {children}
+          <LandscapeBlocker />
         </AuthProvider>
       </body>
     </html>
