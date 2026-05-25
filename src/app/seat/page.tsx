@@ -7,6 +7,7 @@ import Tesseract from "tesseract.js";
 import { ArrowLeft, RefreshCw, CalendarDays, ShieldCheck, Armchair, Loader2, Bot, AlertCircle } from "lucide-react";
 import Script from "next/script";
 import { useAuth } from "../components/AuthProvider";
+import { supabase } from "@/src/lib/superbase";
 
 function NaverMap({ lat, lng, facilityName }: { lat: number; lng: number; facilityName?: string }) {
   const mapElement = useRef<HTMLDivElement>(null);
@@ -205,10 +206,14 @@ function SeatSelectionContent() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false); 
   
-  // 🛡️ 매크로 차단 행동 보안 분석용 상태
-  const [drawingStartTime, setDrawingStartTime] = useState<number | null>(null);
-  const [strokeCount, setStrokeCount] = useState<number>(0);
+  // 🛡️ 매크로 차단 행동 보안 분석용 동기식 Refs (React 비동기 배치 우회 완벽 차단)
+  const drawingStartTimeRef = useRef<number | null>(null);
+  const strokeCountRef = useRef<number>(0);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const questionCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [secureToken, setSecureToken] = useState<string | null>(null);
+  const isTrustedEventRef = useRef<boolean>(true);
+  const [dbBookedSeats, setDbBookedSeats] = useState<string[]>([]);
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -248,12 +253,126 @@ function SeatSelectionContent() {
     fetchDetailData();
   }, [id]);
 
+  const fetchBookedSeats = async () => {
+    if (!id || !selectedDate || !selectedZone) return;
+    try {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("seat_id, seat")
+        .eq("performance_id", id)
+        .eq("date", selectedDate)
+        .like("seat", `${selectedZone} %`);
+
+      if (error) throw error;
+      if (data) {
+        // Extract all seat_ids
+        const booked = data.map((b: any) => b.seat_id).filter(Boolean);
+        setDbBookedSeats(booked);
+        console.log("🛡️ [REALTIME DB SEATS] Fetched booked seats for zone:", selectedZone, booked);
+      }
+    } catch (err) {
+      console.error("실시간 예약 좌석 로드 실패:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!id || !selectedDate || !selectedZone) return;
+
+    // 1. Initial fetch
+    fetchBookedSeats();
+
+    // 2. Real-time postgres changes subscription
+    const channel = supabase
+      .channel(`realtime-seat-bookings-${id}-${selectedDate}-${selectedZone}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "bookings",
+          filter: `performance_id=eq.${id}` // filter by this performance
+        },
+        (payload) => {
+          console.log("🛡️ [REALTIME SEAT UPDATE] postgres change detected:", payload);
+          // Re-fetch booked seats to keep UI synchronized in real-time!
+          fetchBookedSeats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, selectedDate, selectedZone]);
+
+  const drawQuestionOnCanvas = (questionText: string) => {
+    const canvas = questionCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Canvas Background with organic noise styling
+    ctx.fillStyle = "#F8FAFC"; // slate-50
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Add background grids / lines for visual noise (defeating basic bots)
+    ctx.strokeStyle = "rgba(0, 205, 60, 0.12)"; // Melon-green noise line
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < canvas.width; i += 25) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + (Math.random() - 0.5) * 15, canvas.height);
+      ctx.stroke();
+    }
+    for (let j = 0; j < canvas.height; j += 15) {
+      ctx.beginPath();
+      ctx.moveTo(0, j);
+      ctx.lineTo(canvas.width, j + (Math.random() - 0.5) * 10);
+      ctx.stroke();
+    }
+
+    // 2. Add extra random noise lines
+    ctx.strokeStyle = "rgba(100, 116, 139, 0.15)"; // Slate noise
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.stroke();
+    }
+
+    // 3. Add random dots
+    ctx.fillStyle = "rgba(0, 205, 60, 0.08)";
+    for (let i = 0; i < 25; i++) {
+      ctx.beginPath();
+      ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 2 + 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 4. Draw skewed text organic rendering
+    ctx.fillStyle = "#1e293b"; // slate-800
+    ctx.font = "900 18px 'Inter', sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
+
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    // Add dynamic slight rotation to disrupt OCR scraper bots
+    const angle = (Math.random() - 0.5) * 0.08;
+    ctx.rotate(angle);
+    ctx.fillText(questionText, 0, 0);
+    ctx.restore();
+  };
+
   const resetCanvas = () => {
     const randomQuiz = generateDynamicQuiz();
     setCurrentQuiz(randomQuiz);
-    setDrawingStartTime(null); // 보안 측정용 그리기 시작 시각 초기화
-    setStrokeCount(0); // 획수 초기화
+    drawingStartTimeRef.current = null; // 보안 측정용 그리기 시작 시각 초기화
+    strokeCountRef.current = 0; // 획수 초기화
+    isTrustedEventRef.current = true; // 트러스트 이벤트 여부 초기화
     setTimeout(() => {
+      drawQuestionOnCanvas(randomQuiz.q); // 질문 캔버스 렌더링 호출
+      
       const canvas = canvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -280,10 +399,15 @@ function SeatSelectionContent() {
   };
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    // 🛡️ 행동 이벤트 위조 검증 (isTrusted가 false인 경우 스크립트 강제 인젝션)
+    if (e.nativeEvent && e.nativeEvent.isTrusted === false) {
+      isTrustedEventRef.current = false;
+    }
+    
     setIsDrawing(true);
     // 첫 그리기 입력이 발생하면 타임스탬프 기록
-    if (!drawingStartTime) {
-      setDrawingStartTime(Date.now());
+    if (!drawingStartTimeRef.current) {
+      drawingStartTimeRef.current = Date.now();
     }
     const { x, y } = getCoords(e);
     const ctx = canvasRef.current?.getContext('2d');
@@ -298,6 +422,10 @@ function SeatSelectionContent() {
   };
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (e.nativeEvent && e.nativeEvent.isTrusted === false) {
+      isTrustedEventRef.current = false;
+    }
+    
     if (!isDrawing) return;
     if (e.cancelable) e.preventDefault(); 
     const { x, y } = getCoords(e);
@@ -307,7 +435,7 @@ function SeatSelectionContent() {
       ctx.stroke();
       ctx.beginPath();  
       ctx.moveTo(x, y); 
-      setStrokeCount(prev => prev + 1); // 획수 카운트 증가
+      strokeCountRef.current += 1; // 획수 카운트 증가
     }
   };
 
@@ -316,26 +444,27 @@ function SeatSelectionContent() {
 
     // 🛡️ 매크로 방지 행동 검증 허니팟 (Behavioral Security Honeypot)
     const now = Date.now();
-    const duration = drawingStartTime ? now - drawingStartTime : 0;
+    const duration = drawingStartTimeRef.current ? now - drawingStartTimeRef.current : 0;
+    const strokes = strokeCountRef.current;
 
-    console.log(`🛡️ [ANTI-MACRO MONITOR] 드로잉 소요 시간: ${duration}ms, 획수(좌표 이동): ${strokeCount}회`);
+    console.log(`🛡️ [ANTI-MACRO MONITOR] 드로잉 소요 시간: ${duration}ms, 획수(좌표 이동): ${strokes}회`);
 
     // 매크로 탐지 조건:
     // 1. 드로잉 소요 시간이 650ms 미만 (프로그램으로 즉시 드로잉 이벤트를 시뮬레이션해 쏘는 경우)
     // 2. 입력 좌표(획수) 수가 8회 미만 (점만 찍거나 비정상적인 초고속 일자 획 입력인 경우)
-    if (duration < 650 || strokeCount < 8) {
+    if (duration < 650 || strokes < 8) {
       setIsAnalyzing(false);
       // 실시간 서버/도커 로거 연동
       await logEvent("🤖 CAPTCHA SECURITY BLOCKED (Macro Detected)", { 
         duration, 
-        strokes: strokeCount,
+        strokes: strokes,
         performance: performanceTitle 
       });
       setModalState({ 
         isOpen: true, 
         type: 'error', 
         title: '🤖 매크로 의심 감지 (보안 차단)', 
-        message: `그리는 속도가 비정상적으로 빠릅니다. (시간: ${duration}ms, 움직임: ${strokeCount}회)\n\n프로그램 매크로가 아닌 실제 사람이 직접 그리는 속도로 선명하게 그려주세요!` 
+        message: `그리는 속도가 비정상적으로 빠릅니다. (시간: ${duration}ms, 움직임: ${strokes}회)\n\n프로그램 매크로가 아닌 실제 사람이 직접 그리는 속도로 선명하게 그려주세요!` 
       });
       resetCanvas();
       return;
@@ -366,12 +495,54 @@ function SeatSelectionContent() {
       setIsAnalyzing(false); 
 
       if (aiResult === currentQuiz.a) {
-        setModalState({ isOpen: true, type: 'ai_success', title: 'AI 보안 인증 성공!', message: `AI가 [${aiResult}]로 완벽히 판독했습니다.\n좌석 선택 단계로 이동합니다.` });
-        setIsCaptchaVerified(true); // 보안 검증 패스 등록
-        setTimeout(() => {
-          setModalState(prev => ({ ...prev, isOpen: false }));
-          setStep("SEAT");
-        }, 1500);
+        try {
+          // 서버 사이드 보안 검증 및 HMAC 토큰 발급 요청
+          const verifyRes = await fetch("/api/verify-captcha", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              duration,
+              strokes,
+              answer: aiResult,
+              expectedAnswer: currentQuiz.a,
+              title: performanceTitle,
+              isTrusted: isTrustedEventRef.current // 마우스 이벤트 위조 여부 전달
+            })
+          });
+          const verifyData = await verifyRes.json();
+
+          if (verifyData.success && verifyData.token) {
+            setSecureToken(verifyData.token); // 서버 서명 토큰 저장
+            setModalState({ 
+              isOpen: true, 
+              type: 'ai_success', 
+              title: 'AI 보안 인증 성공!', 
+              message: `AI가 [${aiResult}]로 완벽히 판독했습니다.\n좌석 선택 단계로 이동합니다.` 
+            });
+            setIsCaptchaVerified(true); // 보안 검증 패스 등록
+            setTimeout(() => {
+              setModalState(prev => ({ ...prev, isOpen: false }));
+              setStep("SEAT");
+            }, 1500);
+          } else {
+            setModalState({ 
+              isOpen: true, 
+              type: 'error', 
+              title: '🤖 보안 정책 위반 감지', 
+              message: verifyData.error || '비정상적인 그리기 동작이 분석되어 인증이 거부되었습니다.' 
+            });
+            resetCanvas();
+          }
+        } catch (serverErr) {
+          console.error("보안 서버 통신 에러:", serverErr);
+          setModalState({ 
+            isOpen: true, 
+            type: 'error', 
+            title: '보안 서버 연결 실패', 
+            message: '보안 검증 서버와 연동하는 중 오류가 발생했습니다.' 
+          });
+          resetCanvas();
+        }
       } else {
         setModalState({ isOpen: true, type: 'error', title: '인증 실패', message: `앗! AI 판독결과: [ ${aiResult || "인식불가"} ]\n정답(${currentQuiz.a})이 아닙니다.\n다시 한번 선명하게 그려주세요!` });
         resetCanvas(); 
@@ -399,7 +570,7 @@ function SeatSelectionContent() {
     if (!selectedZone || selectedSeats.length === 0) return;
     
     // 🛡️ 우회 차단 검증
-    if (!isCaptchaVerified) {
+    if (!isCaptchaVerified || !secureToken) {
       setModalState({
         isOpen: true,
         type: 'error',
@@ -410,7 +581,20 @@ function SeatSelectionContent() {
       return;
     }
 
-    const secureToken = `AMT-SECURE-PASS-${Date.now()}`;
+    // 🛡️ 실시간 중복 예매 최종 충돌 방지 검증 (Concurrency Collision Prevention)
+    const collisionSeats = selectedSeats.filter(seat => dbBookedSeats.includes(seat));
+    if (collisionSeats.length > 0) {
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        title: '⚠️ 좌석 선점 실패 (이미 예약됨)',
+        message: `선택하신 좌석 중 [ ${collisionSeats.join(', ')} ]은(는) 결제 진행 도중 다른 예약자가 먼저 결제를 완료했습니다.\n\n다른 좌석을 선택해 주세요!`
+      });
+      // 충돌난 좌석 선택 해제
+      setSelectedSeats(prev => prev.filter(seat => !collisionSeats.includes(seat)));
+      return;
+    }
+
     const params = new URLSearchParams({
       id: id || "PF123456",
       zone: selectedZone,
@@ -618,11 +802,13 @@ function SeatSelectionContent() {
               </div>
               
               <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100 flex justify-between items-center mb-4 text-left">
-                <div>
+                <div className="flex-1 mr-4">
                   <p className="text-[10px] text-blue-500 font-black uppercase mb-1">Question</p>
-                  <p className="text-lg font-bold text-gray-800">{currentQuiz.q}</p>
+                  <div className="mt-1 overflow-hidden rounded-xl border border-blue-200/50 shadow-inner bg-gray-50">
+                    <canvas ref={questionCanvasRef} width={280} height={60} className="block w-full h-auto" data-quiz-q={currentQuiz.q} />
+                  </div>
                 </div>
-                <button onClick={resetCanvas} disabled={isAnalyzing} className="p-3 bg-white rounded-full text-gray-400 hover:text-green-500 transition-colors disabled:opacity-50 shadow-sm"><RefreshCw size={20} /></button>
+                <button onClick={resetCanvas} disabled={isAnalyzing} className="p-3 bg-white rounded-full text-gray-400 hover:text-green-500 transition-colors disabled:opacity-50 shadow-sm shrink-0"><RefreshCw size={20} /></button>
               </div>
 
               <div className="relative border-2 border-gray-200 bg-white rounded-2xl overflow-hidden aspect-square touch-none shadow-inner mb-6">
@@ -693,7 +879,7 @@ function SeatSelectionContent() {
                             <span className="w-6 text-xs font-black text-gray-300 text-center">{row}</span>
                             {Array.from({length: 12}).map((_, i) => {
                               const id = `${row}${i+1}`;
-                              const isSoldOut = SOLD_OUT_SEATS.includes(id);
+                              const isSoldOut = SOLD_OUT_SEATS.includes(id) || dbBookedSeats.includes(id);
                               const isSelected = selectedSeats.includes(id); 
                               
                               return (
@@ -722,7 +908,7 @@ function SeatSelectionContent() {
                             <span className="w-6 text-xs font-black text-gray-400 text-center">{row}</span>
                             {Array.from({length: 20}).map((_, i) => {
                               const id = `${row}${i+1}`;
-                              const isSoldOut = SOLD_OUT_SEATS.includes(id) || (rIdx > 5 && i % 4 === 0);
+                              const isSoldOut = SOLD_OUT_SEATS.includes(id) || (rIdx > 5 && i % 4 === 0) || dbBookedSeats.includes(id);
                               const isSelected = selectedSeats.includes(id); 
                               const marginRight = (i === 9) ? 'mr-8' : '';
                               
@@ -749,7 +935,7 @@ function SeatSelectionContent() {
                         {Array.from({length: 30}).map((_, i) => {
                           const num = i * 13 + 7;
                           const id = `입장번호 ${num}번`;
-                          const isSoldOut = i % 5 === 0 || i % 7 === 0;
+                          const isSoldOut = i % 5 === 0 || i % 7 === 0 || dbBookedSeats.includes(id);
                           const isSelected = selectedSeats.includes(id);
                           return (
                             <button key={id} onClick={() => toggleSeat(id)} disabled={isSoldOut}

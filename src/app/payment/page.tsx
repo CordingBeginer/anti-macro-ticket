@@ -22,13 +22,41 @@ function PaymentContent() {
   const searchParams = useSearchParams();
   
   const secureToken = searchParams.get('token');
+  const [isTokenVerified, setIsTokenVerified] = useState(false);
 
   useEffect(() => {
-    // 🛡️ 보안 우회 차단: 검증용 토큰이 없거나 올바른 형식이 아니면 결제 차단 및 리다이렉트
-    if (!secureToken || !secureToken.startsWith("AMT-SECURE-PASS-")) {
-      alert("❌ 보안 인증 우회 시도가 감지되었습니다. 매크로 차단 검증을 완료한 후 결제할 수 있습니다.");
-      router.push("/");
-    }
+    const checkTokenValidity = async () => {
+      // 1. 형식 조기 점검
+      if (!secureToken || !secureToken.startsWith("AMT-SECURE-PASS-")) {
+        alert("❌ 보안 인증 우회 시도가 감지되었습니다. 매크로 차단 검증을 완료한 후 결제할 수 있습니다.");
+        router.push("/");
+        return;
+      }
+
+      // 2. 서버 사이드 원격 토큰 무결성 검증 (HMAC-SHA256 & 만료 진단)
+      try {
+        const verifyRes = await fetch("/api/verify-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: secureToken })
+        });
+        const verifyData = await verifyRes.json();
+
+        if (verifyRes.ok && verifyData.valid) {
+          setIsTokenVerified(true);
+        } else {
+          // 보안 서명 불일치 혹은 만료
+          alert(`❌ 보안 토큰 검증 실패: ${verifyData.error || "위조되거나 만료된 세션입니다."}`);
+          router.push("/");
+        }
+      } catch (err) {
+        console.error("보안 서버 통신 실패:", err);
+        alert("⚠️ 보안 검증 서버와의 통신에 실패했습니다. 안전을 위해 예매 화면으로 되돌아갑니다.");
+        router.push("/");
+      }
+    };
+
+    checkTokenValidity();
   }, [secureToken, router]);
 
   const performanceId = searchParams.get('id') || "PF123456";
@@ -60,6 +88,13 @@ function PaymentContent() {
   }>({ isOpen: false, type: 'ai_analyzing', title: '', message: '' });
 
   const handlePayment = async () => {
+    // 0. 보안 토큰 검증 여부 체크
+    if (!isTokenVerified) {
+      alert("❌ 보안 인증을 완료하지 않았습니다. 매크로 차단 검증을 우회할 수 없습니다.");
+      router.push("/");
+      return;
+    }
+
     // 0. 로그인 상태 확인 (로그인이 필요할 시 예매 모달창 즉시 팝업)
     if (!user) {
       openLoginModal();
@@ -69,6 +104,32 @@ function PaymentContent() {
     if (balance < totalPrice) {
       setModalState({ isOpen: true, type: 'balance_error', title: '잔액 부족', message: '보유하신 포인트가 부족합니다.' });
       return;
+    }
+
+    // 🛡️ [Pre-check] AI 시뮬레이션 진입 전 1차 중복 예매 검사
+    try {
+      const { data: earlyCheck, error: earlyError } = await supabase
+        .from("bookings")
+        .select("seat_id")
+        .eq("performance_id", performanceId)
+        .eq("date", selectedDate)
+        .in("seat_id", seatsArr.map(s => s.trim()))
+        .like("seat", `${selectedZone} %`);
+
+      if (earlyError) throw earlyError;
+      if (earlyCheck && earlyCheck.length > 0) {
+        const taken = earlyCheck.map((b: any) => b.seat_id).join(", ");
+        setModalState({
+          isOpen: true,
+          type: 'error',
+          title: '🎟️ 좌석 선점 실패',
+          message: `결제 요청하신 좌석 [ ${taken} ]은(는) 이미 다른 사용자가 먼저 예매 완료했습니다.\n\n죄송하지만 처음으로 돌아가 다른 좌석을 예매해 주세요.`
+        });
+        setIsProcessing(false);
+        return;
+      }
+    } catch (err) {
+      console.error("1차 중복검사 실패:", err);
     }
 
     setIsProcessing(true);
@@ -83,6 +144,28 @@ function PaymentContent() {
     setModalState(prev => ({ ...prev, isOpen: false }));
     
     try {
+      // 🛡️ [Final Check] 결제 승인 직전 2차 최종 실시간 중복 예매 검사 (0.001초 미세 찰나 방어)
+      const { data: finalCheck, error: finalError } = await supabase
+        .from("bookings")
+        .select("seat_id")
+        .eq("performance_id", performanceId)
+        .eq("date", selectedDate)
+        .in("seat_id", seatsArr.map(s => s.trim()))
+        .like("seat", `${selectedZone} %`);
+
+      if (finalError) throw finalError;
+      if (finalCheck && finalCheck.length > 0) {
+        const taken = finalCheck.map((b: any) => b.seat_id).join(", ");
+        setModalState({
+          isOpen: true,
+          type: 'error',
+          title: '🎟️ 좌석 선점 실패',
+          message: `결제 처리 중 간발의 차이로 다른 사용자가 좌석 [ ${taken} ]의 결제를 완료했습니다.\n\n죄송하지만 처음으로 돌아가 다른 좌석을 예매해 주세요.`
+        });
+        setIsProcessing(false);
+        return;
+      }
+
       const ticketCode = `AMT-${Math.floor(Math.random() * 1000000)}`;
 
       const insertData = seatsArr.map(seatId => ({
