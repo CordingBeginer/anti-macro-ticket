@@ -175,21 +175,26 @@ export default function Home() {
               {/* 상단: 로고 및 로그인/마이티켓 */}
               <div className="flex items-center justify-between w-full">
                 <Link href="/" className="hover:opacity-80 transition cursor-pointer">
-                  <h1 className="font-black text-[23px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">Anti-Macro</h1>
+                  <h1 className="font-black text-[23px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">
+                    Anti-Macro <span className="text-gray-400 font-bold text-[13px] not-italic ml-0.5">Ticket</span>
+                  </h1>
                 </Link>
                 
                 <div className="flex items-center gap-3 font-bold text-[12px]">
                   {user ? (
-                    <div className="flex items-center bg-[#F5F8FF] px-2 py-0.5 rounded-full border border-[#DBEAFE] text-[11px]">
-                      <span className="text-blue-700 font-extrabold">{user.isAdmin ? "👑" : "🎫"} {user.name}</span>
-                    </div>
+                    <>
+                      <div className="flex items-center bg-[#F5F8FF] px-2 py-0.5 rounded-full border border-[#DBEAFE] text-[10px]">
+                        <span className="text-blue-700 font-extrabold">{user.isAdmin ? "👑" : "🎫"} {user.name}</span>
+                      </div>
+                      <button onClick={logout} className="font-black text-gray-400 hover:text-gray-600 cursor-pointer text-[12px]">
+                        로그아웃
+                      </button>
+                    </>
                   ) : (
-                    <span className="text-gray-400 text-[10px] bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">로그인 필요</span>
+                    <button onClick={openLoginModal} className="font-black text-[#00CD3C] hover:text-green-600 cursor-pointer text-[13px] bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
+                      로그인
+                    </button>
                   )}
-                  
-                  <button onClick={() => user ? logout() : openLoginModal()} className="font-black text-gray-400 hover:text-gray-600 cursor-pointer text-[12px]">
-                    {user ? "로그아웃" : "로그인"}
-                  </button>
                   
                   <Link href="/ticket" className="flex items-center gap-1 text-[#00CD3C] bg-green-50 px-2.5 py-1 rounded-full shadow-sm hover:shadow-md transition whitespace-nowrap text-[11px]">
                     <Ticket size={13} /> <span className="font-extrabold">마이티켓</span>
