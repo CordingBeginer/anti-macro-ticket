@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
     `https://naveropenapi.apigw.naver.com/map-geocode/v2/geocode?query=${encodeURIComponent(address)}`,
     {
       headers: {
-        "X-NCP-APIGW-API-KEY-ID": process.env.NAVER_CLIENT_ID!,
-        "X-NCP-APIGW-API-KEY": process.env.NAVER_CLIENT_SECRET!,
+        "X-NCP-APIGW-API-KEY-ID": process.env.NAVER_CLIENT_ID || "snlcvi9s8n",
+        "X-NCP-APIGW-API-KEY": process.env.NAVER_CLIENT_SECRET || "1fUalJtXgiPqe6FCaJ02nnBYku2leVRiO7fmyKBg",
       },
     }
   );
