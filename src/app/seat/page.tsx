@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Tesseract from "tesseract.js";
 import { ArrowLeft, RefreshCw, CalendarDays, ShieldCheck, Armchair, Loader2, Bot, AlertCircle } from "lucide-react";
 import Script from "next/script";
+import { useAuth } from "../components/AuthProvider";
 
 function NaverMap({ lat, lng, facilityName }: { lat: number; lng: number; facilityName?: string }) {
   const mapElement = useRef<HTMLDivElement>(null);
@@ -113,13 +114,24 @@ const getPerformanceDates = (dateStr: string) => {
   }
 };
 
-const NORMAL_QUIZ = Array.of(
-  { q: "숫자 '6' 다음 숫자는?", a: "7" },
-  { q: "1 더하기 2의 정답은?", a: "3" },
-  { q: "숫자 '4' 다음 숫자는?", a: "5" },
-  { q: "숫자 '8' 다음 숫자는?", a: "9" },
-  { q: "영(0) 다음 숫자는?", a: "1" }
-);
+// 동적 수학 퀴즈 생성기 (정적 하드코딩 매크로 우회 방지)
+const generateDynamicQuiz = () => {
+  const num1 = Math.floor(Math.random() * 5) + 3; // 3 ~ 7
+  const num2 = Math.floor(Math.random() * 2) + 1; // 1 ~ 2
+  const operators = ['+', '-'];
+  const operator = operators[Math.floor(Math.random() * operators.length)];
+  
+  let q = "";
+  let a = "";
+  if (operator === '+') {
+    q = `${num1} 더하기 ${num2}의 정답은?`;
+    a = String(num1 + num2);
+  } else {
+    q = `${num1} 빼기 ${num2}의 정답은?`;
+    a = String(num1 - num2);
+  }
+  return { q, a };
+};
 
 type VenueType = "SMALL" | "ARENA" | "STANDING";
 
@@ -161,6 +173,8 @@ function SeatSelectionContent() {
   const id = searchParams.get('id');
   const performanceTitle = searchParams.get('title') || "공연 정보 없음";
 
+  const { logEvent } = useAuth();
+
   interface ShowInfo {
     poster: string;
     title: string;
@@ -190,6 +204,11 @@ function SeatSelectionContent() {
   const [currentQuiz, setCurrentQuiz] = useState({ q: '', a: '' });
   const [isDrawing, setIsDrawing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false); 
+  
+  // 🛡️ 매크로 차단 행동 보안 분석용 상태
+  const [drawingStartTime, setDrawingStartTime] = useState<number | null>(null);
+  const [strokeCount, setStrokeCount] = useState<number>(0);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -230,8 +249,10 @@ function SeatSelectionContent() {
   }, [id]);
 
   const resetCanvas = () => {
-    const randomQuiz = NORMAL_QUIZ[Math.floor(Math.random() * NORMAL_QUIZ.length)];
+    const randomQuiz = generateDynamicQuiz();
     setCurrentQuiz(randomQuiz);
+    setDrawingStartTime(null); // 보안 측정용 그리기 시작 시각 초기화
+    setStrokeCount(0); // 획수 초기화
     setTimeout(() => {
       const canvas = canvasRef.current;
       if (canvas) {
@@ -260,6 +281,10 @@ function SeatSelectionContent() {
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDrawing(true);
+    // 첫 그리기 입력이 발생하면 타임스탬프 기록
+    if (!drawingStartTime) {
+      setDrawingStartTime(Date.now());
+    }
     const { x, y } = getCoords(e);
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) {
@@ -282,11 +307,40 @@ function SeatSelectionContent() {
       ctx.stroke();
       ctx.beginPath();  
       ctx.moveTo(x, y); 
+      setStrokeCount(prev => prev + 1); // 획수 카운트 증가
     }
   };
 
   const verifyDrawing = async () => {
     if (!canvasRef.current) return;
+
+    // 🛡️ 매크로 방지 행동 검증 허니팟 (Behavioral Security Honeypot)
+    const now = Date.now();
+    const duration = drawingStartTime ? now - drawingStartTime : 0;
+
+    console.log(`🛡️ [ANTI-MACRO MONITOR] 드로잉 소요 시간: ${duration}ms, 획수(좌표 이동): ${strokeCount}회`);
+
+    // 매크로 탐지 조건:
+    // 1. 드로잉 소요 시간이 650ms 미만 (프로그램으로 즉시 드로잉 이벤트를 시뮬레이션해 쏘는 경우)
+    // 2. 입력 좌표(획수) 수가 8회 미만 (점만 찍거나 비정상적인 초고속 일자 획 입력인 경우)
+    if (duration < 650 || strokeCount < 8) {
+      setIsAnalyzing(false);
+      // 실시간 서버/도커 로거 연동
+      await logEvent("🤖 CAPTCHA SECURITY BLOCKED (Macro Detected)", { 
+        duration, 
+        strokes: strokeCount,
+        performance: performanceTitle 
+      });
+      setModalState({ 
+        isOpen: true, 
+        type: 'error', 
+        title: '🤖 매크로 의심 감지 (보안 차단)', 
+        message: `그리는 속도가 비정상적으로 빠릅니다. (시간: ${duration}ms, 움직임: ${strokeCount}회)\n\n프로그램 매크로가 아닌 실제 사람이 직접 그리는 속도로 선명하게 그려주세요!` 
+      });
+      resetCanvas();
+      return;
+    }
+
     setIsAnalyzing(true); 
 
     try {
@@ -313,12 +367,13 @@ function SeatSelectionContent() {
 
       if (aiResult === currentQuiz.a) {
         setModalState({ isOpen: true, type: 'ai_success', title: 'AI 보안 인증 성공!', message: `AI가 [${aiResult}]로 완벽히 판독했습니다.\n좌석 선택 단계로 이동합니다.` });
+        setIsCaptchaVerified(true); // 보안 검증 패스 등록
         setTimeout(() => {
           setModalState(prev => ({ ...prev, isOpen: false }));
           setStep("SEAT");
         }, 1500);
       } else {
-        setModalState({ isOpen: true, type: 'error', title: '매크로 의심 감지', message: `앗! AI 판독결과: [ ${aiResult || "인식불가"} ]\n정답(${currentQuiz.a})이 아닙니다.\n다시 한번 그려주세요!` });
+        setModalState({ isOpen: true, type: 'error', title: '인증 실패', message: `앗! AI 판독결과: [ ${aiResult || "인식불가"} ]\n정답(${currentQuiz.a})이 아닙니다.\n다시 한번 선명하게 그려주세요!` });
         resetCanvas(); 
       }
     } catch (err) {
@@ -342,11 +397,27 @@ function SeatSelectionContent() {
 
   const goToPayment = () => {
     if (!selectedZone || selectedSeats.length === 0) return;
+    
+    // 🛡️ 우회 차단 검증
+    if (!isCaptchaVerified) {
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        title: '보안 인증 우회 시도 감지',
+        message: '매크로 방지 보안 인증 단계를 거치지 않았습니다.\n처음부터 다시 시도해주세요.'
+      });
+      setStep("CAPTCHA");
+      return;
+    }
+
+    const secureToken = `AMT-SECURE-PASS-${Date.now()}`;
     const params = new URLSearchParams({
+      id: id || "PF123456",
       zone: selectedZone,
       seats: selectedSeats.join(','),
       title: performanceTitle,
-      date: selectedDate
+      date: selectedDate,
+      token: secureToken // 결제 페이지에 검증 토큰 전달
     });
     router.push(`/payment?${params.toString()}`);
   };

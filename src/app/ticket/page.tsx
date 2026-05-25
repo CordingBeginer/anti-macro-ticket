@@ -4,9 +4,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Ticket, Trash2, Loader2, Calendar, MapPin, AlertCircle, ShieldCheck, Smartphone, X, RefreshCw } from "lucide-react";
-
+import { ArrowLeft, Ticket, Trash2, Loader2, Calendar, MapPin, AlertCircle, ShieldCheck, Smartphone, X, RefreshCw, Lock, Crown } from "lucide-react";
 import { supabase } from "@/src/lib/superbase";
+import { useAuth } from "../components/AuthProvider";
+import LoginModal from "../components/LoginModal";
 
 interface TicketItem {
   id: string;
@@ -20,6 +21,7 @@ interface TicketItem {
   ids: string[];
   count: number;
   code?: string;
+  user_id?: string;
   [key: string]: unknown;
 }
 
@@ -31,6 +33,9 @@ export default function MyTicketPage() {
 
   const [activeQr, setActiveQr] = useState<TicketItem | null>(null);
   const [qrTimer, setQrTimer] = useState(15);
+
+  // 전역 인증 상태 가져오기
+  const { user, loading: authLoading, openLoginModal } = useAuth();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -44,20 +49,35 @@ export default function MyTicketPage() {
   }, [activeQr]);
 
   useEffect(() => {
-    const fetchMyTickets = async () => {
+    if (authLoading) return;
+    
+    // 로그아웃 상태이면 로딩 종료하고 조회 건너뜀
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchMyTickets = async (showLoadingSpinner = true) => {
+      if (showLoadingSpinner) setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("bookings")
-          .select("*")
-          .eq("user_id", "test-user-01") 
-          .order("created_at", { ascending: false });
+        let query = supabase.from("bookings").select("*");
+
+        // 관리자가 아니라면 본인 예약건만 필터링
+        if (!user.isAdmin) {
+          query = query.eq("user_id", user.id);
+        }
+
+        const { data, error } = await query.order("created_at", { ascending: false });
 
         if (error) throw error;
         
         if (data) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const groupedData = data.reduce((acc: TicketItem[], current: any) => {
-            const existing = acc.find(item => item.title === current.title && item.date === current.date);
+            // 관리자 뷰에서는 사용자별로 분리해서 그룹화해야 함
+            const existing = acc.find(
+              item => item.title === current.title && item.date === current.date && item.user_id === current.user_id
+            );
 
             if (existing) {
               const seatNumber = current.seat.split(" ").pop(); 
@@ -84,11 +104,30 @@ export default function MyTicketPage() {
         console.error("🔥 티켓 불러오기 에러:", error.message || error);
         alert(`티켓을 불러오는데 실패했습니다: ${error.message || '알 수 없는 에러'}\n(Supabase 설정이나 네트워크 상태를 확인해주세요)`);
       } finally {
-        setLoading(false);
+        if (showLoadingSpinner) setLoading(false);
       }
     };
-    fetchMyTickets();
-  }, []);
+    
+    fetchMyTickets(true);
+
+    // 실시간 DB 변동 구독 (Supabase Realtime)
+    // bookings 테이블에 데이터가 추가(INSERT)되거나 삭제(DELETE)되면 실시간으로 화면 갱신!
+    const channel = supabase
+      .channel("realtime-bookings-channel")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        () => {
+          console.log("🔔 [ANTI-MACRO REALTIME] 실시간 예약 변동 감지! 데이터를 동기화합니다.");
+          fetchMyTickets(false); // 실시간 반영 시에는 스피너 없이 자연스럽게 데이터만 새로고침
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, authLoading]);
 
   const handleCancelTicket = async (ids: string[], title: string, mainId: string) => {
     const confirmCancel = window.confirm(`[${title}]\n선택하신 ${ids.length}매의 예매를 모두 취소하시겠습니까?`);
@@ -112,6 +151,38 @@ export default function MyTicketPage() {
       setIsDeleting(null);
     }
   };
+
+  // 로그인되지 않은 경우 예쁜 가드 화면 출력
+  if (!authLoading && !user) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50 pb-20 w-full animate-in fade-in duration-500 relative">
+        <header className="bg-white border-b border-gray-200 w-full sticky top-0 z-20 shadow-sm">
+          <div className="max-w-[1440px] w-full mx-auto px-6 py-5 flex items-center">
+            <button onClick={() => router.push('/')} className="mr-5 text-gray-800 hover:text-melon-green transition cursor-pointer"><ArrowLeft size={28} /></button>
+            <h1 className="font-extrabold text-2xl text-gray-900 tracking-tight flex items-center gap-2"><Ticket size={24} className="text-melon-green" /> 스마트 티켓</h1>
+          </div>
+        </header>
+
+        <main className="flex-grow flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto my-20">
+          <div className="w-24 h-24 bg-green-50 text-[#00CD3C] rounded-full flex items-center justify-center mb-6 shadow-sm border border-green-100">
+            <Lock size={44} className="text-[#00CD3C]" />
+          </div>
+          <h2 className="text-2xl font-black text-gray-900 mb-3">로그인이 필요한 서비스입니다</h2>
+          <p className="text-gray-500 font-bold text-sm leading-relaxed mb-8">
+            마이 스마트 티켓 및 실시간 예매 내역은 로그인을 완료하신 회원만 안전하게 조회가 가능합니다.
+          </p>
+          <button 
+            onClick={openLoginModal}
+            className="px-10 py-4 bg-[#00CD3C] hover:bg-[#00b534] text-white font-black text-lg rounded-2xl shadow-lg shadow-green-100 transition active:scale-95 cursor-pointer w-full"
+          >
+            로그인 하러가기
+          </button>
+        </main>
+        
+        <LoginModal />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 pb-20 w-full animate-in fade-in duration-500 relative">
@@ -155,9 +226,29 @@ export default function MyTicketPage() {
       )}
 
       <header className="bg-white border-b border-gray-200 w-full sticky top-0 z-20 shadow-sm">
-        <div className="max-w-[1440px] w-full mx-auto px-6 py-5 flex items-center">
-          <button onClick={() => router.push('/')} className="mr-5 text-gray-800 hover:text-melon-green transition"><ArrowLeft size={28} /></button>
-          <h1 className="font-extrabold text-2xl text-gray-900 tracking-tight flex items-center gap-2"><Ticket size={24} className="text-melon-green" /> 스마트 티켓</h1>
+        <div className="max-w-[1440px] w-full mx-auto px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center">
+            <button onClick={() => router.push('/')} className="mr-5 text-gray-800 hover:text-melon-green transition cursor-pointer"><ArrowLeft size={28} /></button>
+            <h1 className="font-extrabold text-2xl text-gray-900 tracking-tight flex items-center gap-2">
+              {user?.isAdmin ? (
+                <>
+                  <Crown size={24} className="text-amber-500 animate-bounce" />
+                  <span>실시간 예약 통합 대시보드 <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 ml-2">최고 관리자 모드</span></span>
+                </>
+              ) : (
+                <>
+                  <Ticket size={24} className="text-melon-green" />
+                  <span>마이 스마트 티켓</span>
+                </>
+              )}
+            </h1>
+          </div>
+          {user?.isAdmin && (
+            <div className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 animate-pulse">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <span>실시간 동기화 활성화됨</span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -165,7 +256,9 @@ export default function MyTicketPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-40 gap-4">
             <Loader2 className="animate-spin text-melon-green" size={50} />
-            <p className="font-bold text-gray-400 text-lg">나의 예매 내역을 정리하는 중...</p>
+            <p className="font-bold text-gray-400 text-lg">
+              {user?.isAdmin ? "실시간 통합 예매 현황 로드 중..." : "나의 예매 내역을 정리하는 중..."}
+            </p>
           </div>
         ) : tickets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -176,11 +269,21 @@ export default function MyTicketPage() {
                   <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-gray-50 rounded-full border-l border-t border-gray-200 transform -rotate-45" />
                   
                   <div className="flex justify-between items-start mb-5">
-                    <span className="bg-melon-green/10 text-melon-green text-sm font-black px-3 py-1.5 rounded-md">결제완료</span>
+                    <span className={`text-sm font-black px-3 py-1.5 rounded-md ${user?.isAdmin ? "bg-amber-50 text-amber-600 border border-amber-200" : "bg-melon-green/10 text-melon-green"}`}>
+                      {user?.isAdmin ? "👑 전체 예약건" : "결제완료"}
+                    </span>
                     <span className="text-[12px] text-gray-400 font-bold tracking-widest">{ticket.count}매 묶음</span>
                   </div>
                   
                   <h2 className="text-2xl font-extrabold text-gray-900 leading-snug line-clamp-2 mb-4">{ticket.title}</h2>
+                  
+                  {user?.isAdmin && (
+                    <div className="mb-4 text-xs font-black text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3.5 py-2 flex items-center gap-1.5">
+                      <span className="text-sm">👤</span>
+                      <span>예매자 ID: <strong className="text-gray-900 font-mono text-[13px]">{ticket.user_id}</strong></span>
+                    </div>
+                  )}
+
                   <div className="flex flex-col gap-2 text-[15px] text-gray-500 font-bold">
                     <div className="flex items-center gap-2"><Calendar size={16} className="text-gray-400"/> {ticket.date}</div>
                     <div className="flex items-center gap-2 text-melon-green">
@@ -219,6 +322,7 @@ export default function MyTicketPage() {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `@keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }`}} />
+      <LoginModal />
     </div>
   );
 }

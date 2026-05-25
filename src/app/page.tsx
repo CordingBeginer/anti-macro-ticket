@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Ticket, ChevronRight, Loader2, LogOut, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "./components/AuthProvider";
+import LoginModal from "./components/LoginModal";
 
 const CATEGORIES = ["전체", "콘서트", "뮤지컬", "연극", "클래식", "국악"];
 
@@ -22,8 +24,10 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState("전체");
   const [concerts, setConcerts] = useState<Concert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState("");
+
+  // 전역 인증 훅 사용
+  const { user, openLoginModal, logout } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 3500);
@@ -56,7 +60,7 @@ export default function Home() {
       (activeCategory === "국악" && (c.category.includes("국악") || c.category.includes("한국음악"))) ||
       c.category.includes(activeCategory);
     const matchesSearch = c.title.toLowerCase().includes(searchKeyword.toLowerCase()) || 
-                         c.location.toLowerCase().includes(searchKeyword.toLowerCase());
+                          c.location.toLowerCase().includes(searchKeyword.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -67,7 +71,7 @@ export default function Home() {
           key="splash"
           exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
           transition={{ duration: 0.6, ease: "easeInOut" }}
-          className="fixed inset-0 z- bg-[#00CD3C] flex flex-col items-center justify-center"
+          className="fixed inset-0 z-50 bg-[#00CD3C] flex flex-col items-center justify-center"
         >
           <motion.div
             initial={{ y: 30, opacity: 0 }}
@@ -116,19 +120,35 @@ export default function Home() {
                 <input type="text" placeholder="공연명 또는 장소 검색..." className="bg-transparent border-none outline-none text-[15px] lg:text-[16px] w-full font-bold placeholder-gray-400" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} />
                 <Search size={24} className="text-[#00CD3C] flex-shrink-0" />
               </div>
-
-              <div className="flex-shrink-0 flex items-center gap-6 font-bold text-[14px] lg:text-[16px]">
-                {isLoggedIn ? (
-                  <div className="flex items-center gap-2.5 bg-green-50 px-4 py-2 rounded-full border border-green-100 shadow-sm whitespace-nowrap">
-                    <div className="flex-shrink-0 w-8 h-8 bg-[#00CD3C] text-white rounded-full flex items-center justify-center font-black text-sm shadow-inner">충</div>
-                    <span className="text-gray-700">관리자 <strong className="text-[#00CD3C] font-extrabold text-lg">충햄과 딸래미들</strong>님</span>
-                  </div>
+               <div className="flex-shrink-0 flex items-center gap-6 font-bold text-[14px] lg:text-[16px]">
+                {user ? (
+                  user.isAdmin ? (
+                    /* --- 최고 관리자 UI --- */
+                    <div className="flex items-center gap-2.5 bg-[#FFFDF5] px-4 py-2 rounded-full border border-[#FDE047] shadow-sm whitespace-nowrap animate-in fade-in duration-350">
+                      <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-tr from-amber-400 to-yellow-500 text-white rounded-full flex items-center justify-center font-black text-sm shadow-inner ring-1 ring-amber-300">
+                        👑
+                      </div>
+                      <span className="text-amber-800">
+                        최고 관리자 <strong className="text-amber-600 font-extrabold text-lg">{user.name}</strong>님
+                      </span>
+                    </div>
+                  ) : (
+                    /* --- 일반 회원 UI --- */
+                    <div className="flex items-center gap-2.5 bg-[#F5F8FF] px-4 py-2 rounded-full border border-[#DBEAFE] shadow-sm whitespace-nowrap animate-in fade-in duration-350">
+                      <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-tr from-[#3B82F6] to-[#6366F1] text-white rounded-full flex items-center justify-center font-black text-sm shadow-inner">
+                        {user.name ? user.name[0] : "👤"}
+                      </div>
+                      <span className="text-blue-700 font-bold">
+                        🎫 일반회원 <strong className="text-[#3B82F6] font-extrabold text-lg">{user.name}</strong>님
+                      </span>
+                    </div>
+                  )
                 ) : (
                   <div className="flex items-center gap-2.5 bg-gray-50 px-4 py-2 rounded-full border border-gray-200 shadow-sm whitespace-nowrap text-gray-400">로그인 필요</div>
                 )}
                 
-                <button onClick={() => setIsLoggedIn(!isLoggedIn)} className="transition-colors font-black text-gray-400 hover:text-gray-600">
-                  {isLoggedIn ? <><LogOut size={18} className="inline mr-1"/> 로그아웃</> : <><LogIn size={18} className="inline mr-1"/> 로그인</>}
+                <button onClick={() => user ? logout() : openLoginModal()} className="transition-colors font-black text-gray-400 hover:text-gray-600 cursor-pointer">
+                  {user ? <><LogOut size={18} className="inline mr-1"/> 로그아웃</> : <><LogIn size={18} className="inline mr-1"/> 로그인</>}
                 </button>
                 
                 <Link href="/ticket" className="flex items-center gap-2 text-[#00CD3C] bg-green-50 px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition whitespace-nowrap">
@@ -179,6 +199,9 @@ export default function Home() {
               )}
             </section>
           </main>
+
+          {/* 로그인 모달 팝업 */}
+          <LoginModal />
         </motion.div>
       )}
     </AnimatePresence>

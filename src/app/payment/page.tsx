@@ -1,12 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, CreditCard, Receipt, RefreshCw, Bot, ShieldCheck, AlertCircle } from "lucide-react";
 
 import { supabase } from "@/src/lib/superbase";
+import { useAuth } from "../components/AuthProvider";
+import LoginModal from "../components/LoginModal";
 
 const PRICE_MAP: Record<string, number> = {
   "VIP석": 165000,
@@ -19,6 +21,16 @@ function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
+  const secureToken = searchParams.get('token');
+
+  useEffect(() => {
+    // 🛡️ 보안 우회 차단: 검증용 토큰이 없거나 올바른 형식이 아니면 결제 차단 및 리다이렉트
+    if (!secureToken || !secureToken.startsWith("AMT-SECURE-PASS-")) {
+      alert("❌ 보안 인증 우회 시도가 감지되었습니다. 매크로 차단 검증을 완료한 후 결제할 수 있습니다.");
+      router.push("/");
+    }
+  }, [secureToken, router]);
+
   const performanceId = searchParams.get('id') || "PF123456";
   const performanceTitle = searchParams.get('title') || "공연 정보 없음";
   const selectedDate = searchParams.get('date') || "2026.05.22 (금) 18:00";
@@ -37,6 +49,9 @@ function PaymentContent() {
   const [isPaid, setIsPaid] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
 
+  // 전역 인증 정보 가져오기
+  const { user, openLoginModal, logEvent } = useAuth();
+
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     type: 'ai_analyzing' | 'ai_success' | 'error' | 'balance_error';
@@ -45,6 +60,12 @@ function PaymentContent() {
   }>({ isOpen: false, type: 'ai_analyzing', title: '', message: '' });
 
   const handlePayment = async () => {
+    // 0. 로그인 상태 확인 (로그인이 필요할 시 예매 모달창 즉시 팝업)
+    if (!user) {
+      openLoginModal();
+      return;
+    }
+
     if (balance < totalPrice) {
       setModalState({ isOpen: true, type: 'balance_error', title: '잔액 부족', message: '보유하신 포인트가 부족합니다.' });
       return;
@@ -66,7 +87,7 @@ function PaymentContent() {
 
       const insertData = seatsArr.map(seatId => ({
         performance_id: performanceId, 
-        user_id: "test-user-01",       
+        user_id: user.id,       
         title: performanceTitle,       
         seat_id: seatId.trim(),        
         seat: `${selectedZone} ${seatId.trim()}`, 
@@ -85,6 +106,14 @@ function PaymentContent() {
       }
 
       console.log("🔥 Supabase DB 완벽 저장 성공!");
+
+      // 4단계: 실시간 동시 접속 로그 이벤트 출력
+      await logEvent("🎟️ TICKET BOOKING CREATED", {
+        performance: performanceTitle,
+        seats: seatsArr.map(s => `${selectedZone} ${s}`),
+        totalPrice: totalPrice,
+        bookingCount: seatCount,
+      });
 
       const qrText = `[TICKET] CODE: ${ticketCode} / SEATS: ${seatCount}`;
       const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrText)}`;
@@ -238,6 +267,7 @@ function PaymentContent() {
           </div>
         </div>
       )}
+      <LoginModal />
     </div>
   );
 }
