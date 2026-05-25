@@ -58,6 +58,9 @@ export async function GET(request: Request) {
       detailImages = [styurlsObj];
     }
 
+    const cleanPoster = typeof item.poster === 'string' ? item.poster.replace("http://", "https://") : "";
+    const cleanDetailImages = detailImages.map(img => typeof img === 'string' ? img.replace("http://", "https://") : img);
+
     const data = {
       id,
       title: item.prfnm || "정보 없음",
@@ -65,8 +68,8 @@ export async function GET(request: Request) {
       venue: item.fcltynm || "정보 없음",
       cast: item.prfcast || "출연진 정보 없음",
       price: item.pcseguidance || "가격 정보 없음",
-      poster: item.poster || "",
-      detailImages,
+      poster: cleanPoster,
+      detailImages: cleanDetailImages,
       la,
       lo,
       adres,

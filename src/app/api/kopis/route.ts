@@ -13,14 +13,17 @@ export async function GET() {
     const jsonObj = parser.parse(xmlData);
     const concerts = jsonObj.dbs?.db || [];
 
-    const formattedData = Array.isArray(concerts) ? concerts.map((item: Record<string, unknown>) => ({
-      id: item.mt20id,
-      title: item.prfnm,
-      date: `${item.prfpdfrom} ~ ${item.prfpdto}`,
-      location: item.fcltynm,
-      imageUrl: item.poster,
-      category: item.genrenm
-    })) : [];
+    const formattedData = Array.isArray(concerts) ? concerts.map((item: Record<string, any>) => {
+      const posterUrl = typeof item.poster === 'string' ? item.poster.replace("http://", "https://") : "";
+      return {
+        id: item.mt20id,
+        title: item.prfnm,
+        date: `${item.prfpdfrom} ~ ${item.prfpdto}`,
+        location: item.fcltynm,
+        imageUrl: posterUrl,
+        category: item.genrenm
+      };
+    }) : [];
 
     return NextResponse.json({ data: formattedData });
   } catch (error) {
