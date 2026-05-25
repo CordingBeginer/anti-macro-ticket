@@ -174,30 +174,36 @@ export default function Home() {
             <div className="flex flex-col gap-2.5">
               {/* 상단: 로고 및 로그인/마이티켓 */}
               <div className="flex items-center justify-between w-full">
-                <Link href="/" className="hover:opacity-80 transition cursor-pointer">
-                  <h1 className="font-black text-[23px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">
-                    Anti-Macro <span className="text-gray-400 font-bold text-[13px] not-italic ml-0.5">Ticket</span>
+                <Link href="/" className="hover:opacity-80 transition cursor-pointer flex-shrink-0">
+                  <h1 className="font-black text-[20px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">
+                    Anti-Macro <span className="text-gray-400 font-bold text-[11px] not-italic ml-0.5">Ticket</span>
                   </h1>
                 </Link>
                 
-                <div className="flex items-center gap-3 font-bold text-[12px]">
+                <div className="flex items-center gap-2 font-bold text-[12px] flex-shrink-0">
                   {user ? (
                     <>
-                      <div className="flex items-center bg-[#F5F8FF] px-2 py-0.5 rounded-full border border-[#DBEAFE] text-[10px]">
-                        <span className="text-blue-700 font-extrabold">{user.isAdmin ? "👑" : "🎫"} {user.name}</span>
+                      {/* 동그란 슬라이드형 아바타 프로필 배지 적용 (긴 이메일명 겹침 현상 원천 해결) */}
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-black text-[12px] shadow-sm select-none flex-shrink-0 ${
+                        user.isAdmin 
+                          ? "bg-gradient-to-tr from-amber-400 to-yellow-500 border border-amber-300" 
+                          : "bg-gradient-to-tr from-[#3B82F6] to-[#6366F1] border border-blue-200"
+                      }`} title={user.name}>
+                        {user.isAdmin ? "👑" : (user.name ? user.name[0].toUpperCase() : "👤")}
                       </div>
-                      <button onClick={logout} className="font-black text-gray-400 hover:text-gray-600 cursor-pointer text-[12px]">
+                      
+                      <button onClick={logout} className="font-black text-gray-400 hover:text-gray-600 cursor-pointer text-[10px] border border-gray-200 bg-gray-50 px-2 py-1 rounded-md whitespace-nowrap flex-shrink-0">
                         로그아웃
                       </button>
                     </>
                   ) : (
-                    <button onClick={openLoginModal} className="font-black text-[#00CD3C] hover:text-green-600 cursor-pointer text-[13px] bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
+                    <button onClick={openLoginModal} className="font-black text-[#00CD3C] hover:text-green-600 cursor-pointer text-[11px] bg-green-50 px-2 py-0.5 rounded-full border border-green-200 whitespace-nowrap flex-shrink-0">
                       로그인
                     </button>
                   )}
                   
-                  <Link href="/ticket" className="flex items-center gap-1 text-[#00CD3C] bg-green-50 px-2.5 py-1 rounded-full shadow-sm hover:shadow-md transition whitespace-nowrap text-[11px]">
-                    <Ticket size={13} /> <span className="font-extrabold">마이티켓</span>
+                  <Link href="/ticket" className="flex items-center gap-1 text-[#00CD3C] bg-green-50 px-2 py-1 rounded-full shadow-sm hover:shadow-md transition whitespace-nowrap text-[10px] border border-green-100 font-black flex-shrink-0">
+                    <Ticket size={11} /> <span>마이티켓</span>
                   </Link>
                 </div>
               </div>
