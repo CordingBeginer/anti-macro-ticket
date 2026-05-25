@@ -109,6 +109,7 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           className="relative flex flex-col min-h-screen bg-gray-50 overflow-x-hidden w-full"
         >
+          {/* 데스크톱 전용 헤더 */}
           <header className="hidden md:block bg-white border-b border-gray-200 w-full sticky top-0 z-30 shadow-sm">
             <div className="max-w-[1440px] mx-auto px-8 py-6 flex items-center justify-between w-full gap-4">
               <Link href="/" className="flex-shrink-0 flex items-end gap-2 hover:opacity-80 transition cursor-pointer">
@@ -161,6 +162,53 @@ export default function Home() {
               <div className="max-w-[1440px] mx-auto px-8 flex gap-8 lg:gap-12 py-4 text-[16px] lg:text-[18px] font-extrabold text-gray-700 w-full overflow-x-auto hide-scrollbar">
                 {CATEGORIES.map(category => (
                   <button key={category} onClick={() => setActiveCategory(category)} className={`transition-colors whitespace-nowrap ${activeCategory === category ? "text-[#00CD3C] border-b-[3px] border-[#00CD3C] pb-1" : "hover:text-[#00CD3C]"}`}>
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </nav>
+          </header>
+
+          {/* 모바일 전용 헤더 */}
+          <header className="block md:hidden bg-white border-b border-gray-200 w-full sticky top-0 z-30 shadow-sm px-4 py-3">
+            <div className="flex flex-col gap-2.5">
+              {/* 상단: 로고 및 로그인/마이티켓 */}
+              <div className="flex items-center justify-between w-full">
+                <Link href="/" className="hover:opacity-80 transition cursor-pointer">
+                  <h1 className="font-black text-[23px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">Anti-Macro</h1>
+                </Link>
+                
+                <div className="flex items-center gap-3 font-bold text-[12px]">
+                  {user ? (
+                    <div className="flex items-center bg-[#F5F8FF] px-2 py-0.5 rounded-full border border-[#DBEAFE] text-[11px]">
+                      <span className="text-blue-700 font-extrabold">{user.isAdmin ? "👑" : "🎫"} {user.name}</span>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-[10px] bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">로그인 필요</span>
+                  )}
+                  
+                  <button onClick={() => user ? logout() : openLoginModal()} className="font-black text-gray-400 hover:text-gray-600 cursor-pointer text-[12px]">
+                    {user ? "로그아웃" : "로그인"}
+                  </button>
+                  
+                  <Link href="/ticket" className="flex items-center gap-1 text-[#00CD3C] bg-green-50 px-2.5 py-1 rounded-full shadow-sm hover:shadow-md transition whitespace-nowrap text-[11px]">
+                    <Ticket size={13} /> <span className="font-extrabold">마이티켓</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* 중단: 모바일 검색창 */}
+              <div className="flex items-center border-[2px] border-[#00CD3C] rounded-full px-3.5 py-1.5 bg-white w-full">
+                <input type="text" placeholder="공연명 또는 장소 검색..." className="bg-transparent border-none outline-none text-[12px] w-full font-bold placeholder-gray-400" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} />
+                <Search size={16} className="text-[#00CD3C] flex-shrink-0" />
+              </div>
+            </div>
+
+            {/* 하단: 카테고리 (가로 스크롤 가능) */}
+            <nav className="border-t border-gray-100 w-full bg-white mt-2 pt-2 overflow-x-auto hide-scrollbar">
+              <div className="flex gap-5 text-[14px] font-extrabold text-gray-700 w-full pb-0.5">
+                {CATEGORIES.map(category => (
+                  <button key={category} onClick={() => setActiveCategory(category)} className={`transition-colors whitespace-nowrap ${activeCategory === category ? "text-[#00CD3C] border-b-[2px] border-[#00CD3C] pb-0.5" : "hover:text-[#00CD3C]"}`}>
                     {category}
                   </button>
                 ))}
