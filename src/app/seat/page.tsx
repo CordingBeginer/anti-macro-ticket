@@ -147,6 +147,21 @@ function getVenueType(venueName: string): VenueType {
   return "SMALL";
 }
 
+const getSeatColorClass = (zone: string | null) => {
+  if (!zone) return 'bg-[#00CD3C] hover:bg-green-500 text-green-950';
+  if (zone.includes("VIP") || zone.includes("플로어") || zone.includes("A구역")) {
+    return 'bg-amber-400 hover:bg-amber-500 text-amber-950';
+  }
+  if (zone.includes("R석") || zone.includes("1층") || zone.includes("B구역")) {
+    return 'bg-blue-400 hover:bg-blue-500 text-white';
+  }
+  if (zone.includes("S석") || zone.includes("2층") || zone.includes("C구역")) {
+    return 'bg-emerald-400 hover:bg-emerald-500 text-emerald-950';
+  }
+  // A석 / 3층 / D구역
+  return 'bg-gray-400 hover:bg-gray-500 text-white';
+};
+
 const TICKET_ZONES = [
   { name: "VIP석", price: "165,000원" },
   { name: "R석", price: "143,000원" },
@@ -896,6 +911,17 @@ function SeatSelectionContent() {
                     </div>
                   )}
 
+                  {/* 🛡️ 매크로 차단 등급 강화 알림 (VIP/R석 등 최고등급 보안 구역 차별화 기능) */}
+                  {selectedZone && (selectedZone.includes("VIP") || selectedZone.includes("R석") || selectedZone.includes("플로어") || selectedZone.includes("A구역")) && (
+                    <div className="w-full max-w-[600px] flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 mb-6 animate-in fade-in duration-300 text-xs font-bold leading-relaxed">
+                      <ShieldCheck size={20} className="text-amber-500 animate-pulse flex-shrink-0" />
+                      <div className="text-left">
+                        <span className="block text-amber-900 font-extrabold text-[13px] mb-0.5">🛡️ 보안 최고 등급 강화 좌석</span>
+                        <span>리셀 방지(암표 방지) 정책에 의해 이 고부가가치 구역은 **매크로 2중 실시간 추적 엔진** 및 **행동 정밀 진단(시간/이벤트 무결성)**이 200% 집중 적용 중인 보안 안심 구역입니다.</span>
+                      </div>
+                    </div>
+                  )}
+
                  {venueType === "SMALL" && (
                  <div className="min-w-[550px] flex flex-col items-center">
                     <div className="w-full h-8 bg-gray-300 rounded-b-2xl text-gray-500 font-black text-[10px] flex items-center justify-center mb-16 tracking-[1em]">STAGE</div>
@@ -911,7 +937,7 @@ function SeatSelectionContent() {
                               return (
                                 <button key={id} onClick={() => toggleSeat(id)} disabled={isSoldOut}
                                   className={`w-9 h-9 rounded-md text-[10px] font-bold transition-all ${
-                                    isSelected ? 'bg-black text-white scale-110 shadow-lg' : isSoldOut ? 'bg-gray-200 cursor-not-allowed' : 'bg-green-400 hover:bg-green-500 text-green-900'
+                                    isSelected ? 'bg-black text-white scale-110 shadow-lg' : isSoldOut ? 'bg-gray-200 cursor-not-allowed' : getSeatColorClass(selectedZone)
                                   }`}>
                                   {i+1}
                                 </button>
@@ -941,7 +967,7 @@ function SeatSelectionContent() {
                               return (
                                 <button key={id} onClick={() => toggleSeat(id)} disabled={isSoldOut}
                                   className={`w-7 h-7 rounded-[4px] text-[8px] font-bold transition-all ${marginRight} ${
-                                    isSelected ? 'bg-black text-white scale-110 shadow-lg' : isSoldOut ? 'bg-gray-200 cursor-not-allowed' : 'bg-blue-400 hover:bg-blue-500 text-white'
+                                    isSelected ? 'bg-black text-white scale-110 shadow-lg' : isSoldOut ? 'bg-gray-200 cursor-not-allowed' : getSeatColorClass(selectedZone)
                                   }`}>
                                   {i+1}
                                 </button>
