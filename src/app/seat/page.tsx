@@ -888,6 +888,13 @@ function SeatSelectionContent() {
                 ))}
               </div>
               <div className={`w-full bg-gray-50 p-6 rounded-xl overflow-x-auto flex flex-col items-center border transition-opacity duration-300 ${selectedZone ? "opacity-100" : "opacity-30 pointer-events-none"}`}>
+                  
+                  {/* 모바일 화면 가로 스크롤 가이드라인 배지 */}
+                  {selectedZone && (
+                    <div className="md:hidden w-full text-center py-2 px-4 mb-5 bg-[#00CD3C]/5 border border-[#00CD3C]/20 text-[#00CD3C] rounded-full text-[11px] font-black animate-pulse flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden">
+                      <span>👈 손가락으로 좌우로 밀어서 전체 좌석을 확인하세요 👉</span>
+                    </div>
+                  )}
 
                  {venueType === "SMALL" && (
                  <div className="min-w-[550px] flex flex-col items-center">
@@ -972,15 +979,15 @@ function SeatSelectionContent() {
               </div>
             </section>
 
-            <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t p-6 flex justify-center shadow-lg animate-in slide-in-from-bottom-2">
+            <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t px-5 py-4 pb-6 md:p-6 flex justify-center shadow-lg animate-in slide-in-from-bottom-2">
                <div className="w-full max-w-[1000px] flex justify-between items-center gap-4">
                   <div className="text-left flex-1">
-                     <span className="text-gray-400 font-bold text-[10px] uppercase">Selected Seats</span>
-                     <p className="text-gray-900 font-black text-xl line-clamp-1">
+                     <span className="text-gray-400 font-bold text-[9px] md:text-[10px] uppercase tracking-wider">선택한 좌석</span>
+                     <p className="text-gray-900 font-black text-lg md:text-xl line-clamp-1">
                        {selectedSeats.length > 0 ? `${selectedSeats.join(', ')} (${selectedSeats.length}매)` : "없음"}
                      </p>
                   </div>
-                  <button onClick={goToPayment} disabled={!selectedZone || selectedSeats.length === 0} className={`px-12 py-4 rounded-xl font-black text-lg transition-all whitespace-nowrap ${selectedSeats.length > 0 ? 'bg-green-500 text-white shadow-md hover:bg-green-600' : 'bg-gray-100 text-gray-300'}`}>
+                  <button onClick={goToPayment} disabled={!selectedZone || selectedSeats.length === 0} className={`px-8 py-3.5 md:px-12 md:py-4 rounded-xl font-black text-base md:text-lg transition-all whitespace-nowrap cursor-pointer ${selectedSeats.length > 0 ? 'bg-green-500 text-white shadow-md hover:bg-green-600' : 'bg-gray-100 text-gray-300'}`}>
                     선택 완료
                   </button>
                </div>
