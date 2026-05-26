@@ -116,13 +116,14 @@ export default function Home() {
         >
           {/* 데스크톱 전용 헤더 */}
           <header className="hidden md:block bg-white border-b border-gray-200 w-full sticky top-0 z-30 shadow-sm">
-            <div className="max-w-[1440px] mx-auto px-8 py-5 flex items-center justify-between w-full gap-4">
+            <div className="max-w-[1440px] mx-auto px-8 py-5 flex items-center justify-between w-full gap-4 relative">
               <Link href="/" className="flex-shrink-0 flex items-end gap-2 hover:opacity-80 transition cursor-pointer">
                 <h1 className="font-black text-[34px] lg:text-[40px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">Anti-Macro</h1>
                 <span className="text-[#00CD3C] font-bold mb-1 text-base lg:text-lg hidden lg:inline">Ticket</span>
               </Link>
               
-              <div className="w-[320px] lg:w-[500px] xl:w-[600px] flex-shrink-0 mx-auto flex items-center border-[3px] border-[#00CD3C] rounded-full px-6 py-2 bg-white transition-all focus-within:shadow-[0_0_15px_rgba(0,205,60,0.12)]">
+              {/* 중앙 검색창 (absolute로 완전 정중앙 고정하여 로그인/로그아웃 시 흔들림 100% 방지) */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] lg:w-[480px] xl:w-[580px] flex items-center border-[3px] border-[#00CD3C] rounded-full px-6 py-2 bg-white transition-all focus-within:shadow-[0_0_15px_rgba(0,205,60,0.12)]">
                 <input type="text" placeholder="공연명 또는 장소 검색..." className="bg-transparent border-none outline-none text-[14px] lg:text-[15px] w-full font-bold placeholder-gray-400" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} />
                 <Search size={20} className="text-[#00CD3C] flex-shrink-0" />
               </div>
@@ -130,8 +131,8 @@ export default function Home() {
               <div className="flex-shrink-0 flex items-center gap-4 lg:gap-6 font-bold text-[13px] lg:text-[15px]">
                 {mounted && user ? (
                   <div className="flex items-center gap-3">
-                    {/* --- 통합 유저 및 포인트 지갑 UI (원 안 수직 2줄 배치) --- */}
-                    <div className="flex flex-col justify-center items-center border-[3px] border-[#00CD3C] rounded-2xl px-5 py-1.5 bg-white shadow-sm min-h-[50px] min-w-[210px] whitespace-nowrap select-none transition duration-300">
+                    {/* --- 통합 유저 및 포인트 지갑 UI (원 안 수직 2줄 배치 & rounded-full 도형 완벽 통일) --- */}
+                    <div className="flex flex-col justify-center items-center border-[3px] border-[#00CD3C] rounded-full px-7 py-1.5 bg-white shadow-sm min-h-[50px] min-w-[220px] whitespace-nowrap select-none transition duration-300">
                       {/* 1줄: 최고 관리자 / 일반 회원 */}
                       {user.isAdmin ? (
                         <div className="flex items-center gap-1 leading-none mb-0.5">
@@ -166,7 +167,7 @@ export default function Home() {
                   </div>
                 ) : (
                   mounted && !user && (
-                    <div className="flex items-center gap-2 bg-gray-50 px-3.5 py-1.5 rounded-full border border-gray-200 shadow-sm whitespace-nowrap text-gray-400 text-xs">
+                    <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-full border border-gray-200 shadow-sm whitespace-nowrap text-gray-400 text-xs">
                       로그인 필요
                     </div>
                   )
