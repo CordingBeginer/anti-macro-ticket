@@ -130,34 +130,37 @@ export default function Home() {
               <div className="flex-shrink-0 flex items-center gap-4 lg:gap-6 font-bold text-[13px] lg:text-[15px]">
                 {mounted && user ? (
                   <div className="flex items-center gap-4">
-                    {/* 수직 2행 구조: 상단 회원/관리자 정보, 하단 보유 포인트 */}
-                    <div className="flex flex-col items-end gap-1.5">
+                    {/* --- 통합 유저 및 포인트 지갑 UI (검색창과 완벽히 동일한 보더 및 패딩 크기 적용) --- */}
+                    <div className="flex items-center border-[3px] border-[#00CD3C] rounded-full px-5 py-2 bg-white shadow-sm whitespace-nowrap">
                       {user.isAdmin ? (
                         /* --- 최고 관리자 UI --- */
-                        <div className="flex items-center gap-2 bg-[#FFFDF5] px-3.5 py-1 rounded-full border border-[#FDE047] shadow-sm whitespace-nowrap animate-in fade-in duration-350">
-                          <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-tr from-amber-400 to-yellow-500 text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-inner ring-1 ring-amber-300">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-gradient-to-tr from-amber-400 to-yellow-500 text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-inner ring-1 ring-amber-300">
                             👑
                           </div>
-                          <span className="text-amber-800 text-[11px] lg:text-[12px]">
+                          <span className="text-amber-800 text-[12px] lg:text-[13px]">
                             최고 관리자 <strong className="text-amber-600 font-extrabold text-[12px] lg:text-[13px]">{user.name}</strong>님
                           </span>
                         </div>
                       ) : (
                         /* --- 일반 회원 UI --- */
-                        <div className="flex items-center gap-2 bg-[#F5F8FF] px-3.5 py-1 rounded-full border border-[#DBEAFE] shadow-sm whitespace-nowrap animate-in fade-in duration-350">
-                          <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-tr from-[#3B82F6] to-[#6366F1] text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-inner">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-gradient-to-tr from-[#3B82F6] to-[#6366F1] text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-inner">
                             {user.name ? user.name[0] : "👤"}
                           </div>
-                          <span className="text-blue-700 font-bold text-[11px] lg:text-[12px]">
+                          <span className="text-blue-700 font-bold text-[12px] lg:text-[13px]">
                             🎫 일반회원 <strong className="text-[#3B82F6] font-extrabold text-[12px] lg:text-[13px]">{user.name}</strong>님
                           </span>
                         </div>
                       )}
-                      
-                      {/* 보유 포인트 배지 (관리자/일반회원 배지 밑으로 정렬) */}
-                      <div className="flex items-center gap-1.5 bg-[#F4FBF7] hover:bg-[#EBF7F0] px-3.5 py-1 rounded-full border border-[#D1F2DE] shadow-sm transition duration-300 group whitespace-nowrap">
+
+                      {/* 중앙 세로 구분선 */}
+                      <div className="w-[1px] h-5 bg-gray-200 mx-4" />
+
+                      {/* 보유 포인트 배지 */}
+                      <div className="flex items-center gap-1.5 group">
                         <span className="text-[14px] group-hover:scale-110 transition duration-300">💳</span>
-                        <span className="text-[#00CD3C] text-[11px] lg:text-[12px] font-black tracking-tight">
+                        <span className="text-[#00CD3C] text-[12px] lg:text-[13px] font-black tracking-tight">
                           보유 포인트 <strong className="text-gray-900 font-black ml-1 text-[12px] lg:text-[13px]">{(balance || 0).toLocaleString()} P</strong>
                         </span>
                       </div>
