@@ -229,33 +229,33 @@ export default function Home() {
                 </div>
               </div>
  
-              {/* 중단: 웹 버전과 완벽히 동일한 통합 2줄 원형 박스 모바일 이식 (도형 및 스타일 100% 일치) */}
+              {/* 중단 1.5행: 웹 버전의 통합 알약 박스를 모바일 가로 1줄 슬림 형태로 최적화 이식 (비율 정상화) */}
               {mounted && user && (
-                <div className="flex flex-col justify-center items-center border-2 border-[#00CD3C] rounded-full px-5 py-2 bg-white shadow-sm w-full min-h-[48px] whitespace-nowrap select-none animate-in fade-in duration-300">
-                  {/* 1줄: 최고 관리자 / 일반 회원 */}
+                <div className="flex items-center justify-between border-2 border-[#00CD3C] rounded-full px-5 py-2 bg-white shadow-sm w-full min-h-[44px] whitespace-nowrap select-none animate-in fade-in duration-300">
+                  {/* 왼쪽: 유저 이름 정보 (모바일에 알맞게 슬림화) */}
                   {user.isAdmin ? (
-                    <div className="flex items-center gap-1 leading-none mb-0.5">
-                      <span className="text-[10px]">👑</span>
-                      <span className="text-amber-800 text-[10.5px] font-black">
-                        최고 관리자 <strong className="text-amber-600 font-extrabold">{user.name}</strong>님
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-[11px] flex-shrink-0">👑</span>
+                      <span className="text-amber-800 text-[11px] font-black truncate max-w-[120px]">
+                        {user.name}님
                       </span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1 leading-none mb-0.5">
-                      <span className="text-[10px]">👤</span>
-                      <span className="text-blue-700 font-bold text-[10.5px]">
-                        일반회원 <strong className="text-[#3B82F6] font-extrabold">{user.name}</strong>님
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-[11px] flex-shrink-0">👤</span>
+                      <span className="text-blue-700 font-bold text-[11px] truncate max-w-[120px]">
+                        {user.name}님
                       </span>
                     </div>
                   )}
 
-                  {/* 미세한 수평 구분선 */}
-                  <div className="w-[130px] h-[1px] bg-gray-100 my-0.5" />
+                  {/* 중앙 세로선 */}
+                  <div className="w-[1px] h-3.5 bg-gray-200 mx-2 flex-shrink-0" />
 
-                  {/* 2줄: 보유 포인트 */}
-                  <div className="flex items-center gap-1 leading-none mt-0.5">
-                    <span className="text-[10px]">💳</span>
-                    <span className="text-[#00CD3C] text-[10.5px] font-black tracking-tight">
+                  {/* 오른쪽: 보유 포인트 (가로 밀착 나열) */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <span className="text-[11px] flex-shrink-0">💳</span>
+                    <span className="text-[#00CD3C] text-[11px] font-black tracking-tight flex-shrink-0">
                       포인트 <strong className="text-gray-900 font-black ml-0.5">{(balance || 0).toLocaleString()} P</strong>
                     </span>
                   </div>
