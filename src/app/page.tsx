@@ -122,46 +122,41 @@ export default function Home() {
                 <span className="text-[#00CD3C] font-bold mb-1 text-base lg:text-lg hidden lg:inline">Ticket</span>
               </Link>
               
-              <div className="flex-1 max-w-[700px] min-w-[280px] mx-6 flex items-center border-[3px] border-[#00CD3C] rounded-full px-6 py-2.5 bg-white transition-all focus-within:shadow-[0_0_15px_rgba(0,205,60,0.12)]">
-                <input type="text" placeholder="공연명 또는 장소 검색..." className="bg-transparent border-none outline-none text-[15px] lg:text-[16px] w-full font-bold placeholder-gray-400" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} />
-                <Search size={22} className="text-[#00CD3C] flex-shrink-0" />
+              <div className="w-[320px] lg:w-[500px] xl:w-[600px] flex-shrink-0 mx-auto flex items-center border-[3px] border-[#00CD3C] rounded-full px-6 py-2 bg-white transition-all focus-within:shadow-[0_0_15px_rgba(0,205,60,0.12)]">
+                <input type="text" placeholder="공연명 또는 장소 검색..." className="bg-transparent border-none outline-none text-[14px] lg:text-[15px] w-full font-bold placeholder-gray-400" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} />
+                <Search size={20} className="text-[#00CD3C] flex-shrink-0" />
               </div>
               
               <div className="flex-shrink-0 flex items-center gap-4 lg:gap-6 font-bold text-[13px] lg:text-[15px]">
                 {mounted && user ? (
-                  <div className="flex items-center gap-4">
-                    {/* --- 통합 유저 및 포인트 지갑 UI (검색창과 완벽히 동일한 보더 및 패딩 크기 적용) --- */}
-                    <div className="flex items-center border-[3px] border-[#00CD3C] rounded-full px-5 py-2 bg-white shadow-sm whitespace-nowrap">
+                  <div className="flex items-center gap-3">
+                    {/* --- 통합 유저 및 포인트 지갑 UI (원 안 수직 2줄 배치) --- */}
+                    <div className="flex flex-col justify-center items-center border-[3px] border-[#00CD3C] rounded-2xl px-5 py-1.5 bg-white shadow-sm min-h-[50px] min-w-[210px] whitespace-nowrap select-none transition duration-300">
+                      {/* 1줄: 최고 관리자 / 일반 회원 */}
                       {user.isAdmin ? (
-                        /* --- 최고 관리자 UI --- */
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-gradient-to-tr from-amber-400 to-yellow-500 text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-inner ring-1 ring-amber-300">
-                            👑
-                          </div>
-                          <span className="text-amber-800 text-[12px] lg:text-[13px]">
-                            최고 관리자 <strong className="text-amber-600 font-extrabold text-[12px] lg:text-[13px]">{user.name}</strong>님
+                        <div className="flex items-center gap-1 leading-none mb-0.5">
+                          <span className="text-[11px]">👑</span>
+                          <span className="text-amber-800 text-[11px] lg:text-[12px] font-black">
+                            최고 관리자 <strong className="text-amber-600 font-extrabold">{user.name}</strong>님
                           </span>
                         </div>
                       ) : (
-                        /* --- 일반 회원 UI --- */
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-gradient-to-tr from-[#3B82F6] to-[#6366F1] text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-inner">
-                            {user.name ? user.name[0] : "👤"}
-                          </div>
-                          <span className="text-blue-700 font-bold text-[12px] lg:text-[13px]">
-                            🎫 일반회원 <strong className="text-[#3B82F6] font-extrabold text-[12px] lg:text-[13px]">{user.name}</strong>님
+                        <div className="flex items-center gap-1 leading-none mb-0.5">
+                          <span className="text-[11px]">👤</span>
+                          <span className="text-blue-700 font-bold text-[11px] lg:text-[12px]">
+                            일반회원 <strong className="text-[#3B82F6] font-extrabold">{user.name}</strong>님
                           </span>
                         </div>
                       )}
 
-                      {/* 중앙 세로 구분선 */}
-                      <div className="w-[1px] h-5 bg-gray-200 mx-4" />
+                      {/* 미세한 수평 구분선 */}
+                      <div className="w-[140px] h-[1px] bg-gray-100 my-0.5" />
 
-                      {/* 보유 포인트 배지 */}
-                      <div className="flex items-center gap-1.5 group">
-                        <span className="text-[14px] group-hover:scale-110 transition duration-300">💳</span>
-                        <span className="text-[#00CD3C] text-[12px] lg:text-[13px] font-black tracking-tight">
-                          보유 포인트 <strong className="text-gray-900 font-black ml-1 text-[12px] lg:text-[13px]">{(balance || 0).toLocaleString()} P</strong>
+                      {/* 2줄: 보유 포인트 */}
+                      <div className="flex items-center gap-1 leading-none mt-0.5">
+                        <span className="text-[11px]">💳</span>
+                        <span className="text-[#00CD3C] text-[11px] lg:text-[12px] font-black tracking-tight">
+                          포인트 <strong className="text-gray-900 font-black ml-0.5">{(balance || 0).toLocaleString()} P</strong>
                         </span>
                       </div>
                     </div>
