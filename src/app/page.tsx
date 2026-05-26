@@ -214,20 +214,9 @@ export default function Home() {
                 
                 <div className="flex items-center gap-2 font-bold text-[12px] flex-shrink-0">
                   {user ? (
-                    <>
-                      {/* 동그란 슬라이드형 아바타 프로필 배지 적용 (긴 이메일명 겹침 현상 원천 해결) */}
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-black text-[12px] shadow-sm select-none flex-shrink-0 ${
-                        user.isAdmin 
-                          ? "bg-gradient-to-tr from-amber-400 to-yellow-500 border border-amber-300" 
-                          : "bg-gradient-to-tr from-[#3B82F6] to-[#6366F1] border border-blue-200"
-                      }`} title={user.name}>
-                        {user.isAdmin ? "👑" : (user.name ? user.name[0].toUpperCase() : "👤")}
-                      </div>
-                      
-                      <button onClick={logout} className="font-black text-gray-400 hover:text-gray-600 cursor-pointer text-[10px] border border-gray-200 bg-gray-50 px-2 py-1 rounded-md whitespace-nowrap flex-shrink-0">
-                        로그아웃
-                      </button>
-                    </>
+                    <button onClick={logout} className="font-black text-gray-400 hover:text-gray-600 cursor-pointer text-[10px] border border-gray-200 bg-gray-50 px-2 py-1 rounded-md whitespace-nowrap flex-shrink-0">
+                      로그아웃
+                    </button>
                   ) : (
                     <button onClick={openLoginModal} className="font-black text-[#00CD3C] hover:text-green-600 cursor-pointer text-[11px] bg-green-50 px-2 py-0.5 rounded-full border border-green-200 whitespace-nowrap flex-shrink-0">
                       로그인
@@ -240,15 +229,36 @@ export default function Home() {
                 </div>
               </div>
  
-              {/* 중단 1.5행: 모바일 전용 가상 지갑 정보 단독 한 줄 노출 (웹 버전과 동일하게 rounded-full 및 border-2 얇은 두께로 톤앤매너 통일) */}
+              {/* 중단: 웹 버전과 완벽히 동일한 통합 2줄 원형 박스 모바일 이식 (도형 및 스타일 100% 일치) */}
               {mounted && user && (
-                <div className="flex items-center justify-between bg-[#F4FBF7] px-5 py-2 rounded-full border-2 border-[#D1F2DE] text-[11px] font-black text-[#00CD3C] w-full shadow-inner animate-in fade-in duration-300">
-                  <div className="flex items-center gap-1.5">
-                    <span>💳 내 가상 지갑</span>
-                    <span className="text-gray-400">|</span>
-                    <span className="text-gray-500 font-bold text-[10px]">자동 실시간 차감</span>
+                <div className="flex flex-col justify-center items-center border-2 border-[#00CD3C] rounded-full px-5 py-2 bg-white shadow-sm w-full min-h-[48px] whitespace-nowrap select-none animate-in fade-in duration-300">
+                  {/* 1줄: 최고 관리자 / 일반 회원 */}
+                  {user.isAdmin ? (
+                    <div className="flex items-center gap-1 leading-none mb-0.5">
+                      <span className="text-[10px]">👑</span>
+                      <span className="text-amber-800 text-[10.5px] font-black">
+                        최고 관리자 <strong className="text-amber-600 font-extrabold">{user.name}</strong>님
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 leading-none mb-0.5">
+                      <span className="text-[10px]">👤</span>
+                      <span className="text-blue-700 font-bold text-[10.5px]">
+                        일반회원 <strong className="text-[#3B82F6] font-extrabold">{user.name}</strong>님
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 미세한 수평 구분선 */}
+                  <div className="w-[130px] h-[1px] bg-gray-100 my-0.5" />
+
+                  {/* 2줄: 보유 포인트 */}
+                  <div className="flex items-center gap-1 leading-none mt-0.5">
+                    <span className="text-[10px]">💳</span>
+                    <span className="text-[#00CD3C] text-[10.5px] font-black tracking-tight">
+                      포인트 <strong className="text-gray-900 font-black ml-0.5">{(balance || 0).toLocaleString()} P</strong>
+                    </span>
                   </div>
-                  <span className="text-gray-900 text-[13px] font-black tracking-tight">{(balance || 0).toLocaleString()} P</span>
                 </div>
               )}
  
