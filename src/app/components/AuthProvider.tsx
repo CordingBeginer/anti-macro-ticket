@@ -24,6 +24,7 @@ interface AuthContextType {
   logEvent: (event: string, details?: any) => Promise<void>;
   balance: number;
   deductBalance: (amount: number) => boolean;
+  refundBalance: (amount: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -240,6 +241,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
+  const refundBalance = (amount: number): void => {
+    if (!user) return;
+    const storageKey = `amt_balance_${user.id}`;
+    const currentBalance = parseInt(localStorage.getItem(storageKey) || "5000000", 10);
+    const newBalance = currentBalance + amount;
+    localStorage.setItem(storageKey, newBalance.toString());
+    setBalance(newBalance);
+  };
+
   // 로그아웃
   const logout = async () => {
     const prevUser = user;
@@ -264,6 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logEvent,
         balance,
         deductBalance,
+        refundBalance,
       }}
     >
       {children}

@@ -41,7 +41,7 @@ export default function MyTicketPage() {
   const [qrTimer, setQrTimer] = useState(15);
 
   // 전역 인증 상태 가져오기
-  const { user, loading: authLoading, openLoginModal } = useAuth();
+  const { user, loading: authLoading, openLoginModal, refundBalance } = useAuth();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -336,12 +336,20 @@ export default function MyTicketPage() {
                   setCancelModal(prev => ({ ...prev, isOpen: false }));
                   setIsDeleting(mainId);
                   try {
+                    // 환불해 줄 금액 계산 (취소할 예매 내역의 totalPrice)
+                    const cancelledTicket = tickets.find(t => t.id === mainId);
+
                     const { error } = await supabase
                       .from("bookings")
                       .delete()
                       .in("id", ids);
 
                     if (error) throw error;
+
+                    // 환불 성공 시 전역 가상 잔액 복구
+                    if (cancelledTicket) {
+                      refundBalance(cancelledTicket.totalPrice);
+                    }
 
                     setTickets(prev => prev.filter(t => !ids.includes(t.id)));
                     alert("성공적으로 취소되었습니다.");
