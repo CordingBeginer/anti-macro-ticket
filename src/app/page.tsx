@@ -116,60 +116,74 @@ export default function Home() {
         >
           {/* 데스크톱 전용 헤더 */}
           <header className="hidden md:block bg-white border-b border-gray-200 w-full sticky top-0 z-30 shadow-sm">
-            <div className="max-w-[1440px] mx-auto px-8 py-6 flex items-center justify-between w-full gap-4">
+            <div className="max-w-[1440px] mx-auto px-8 py-5 flex items-center justify-between w-full gap-4">
               <Link href="/" className="flex-shrink-0 flex items-end gap-2 hover:opacity-80 transition cursor-pointer">
                 <h1 className="font-black text-[34px] lg:text-[40px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">Anti-Macro</h1>
                 <span className="text-[#00CD3C] font-bold mb-1 text-base lg:text-lg hidden lg:inline">Ticket</span>
               </Link>
               
-              <div className="flex-1 max-w-[600px] min-w-[300px] flex items-center border-[3px] border-[#00CD3C] rounded-full px-6 py-3 bg-white">
+              <div className="flex-1 max-w-[700px] min-w-[280px] mx-6 flex items-center border-[3px] border-[#00CD3C] rounded-full px-6 py-2.5 bg-white transition-all focus-within:shadow-[0_0_15px_rgba(0,205,60,0.12)]">
                 <input type="text" placeholder="공연명 또는 장소 검색..." className="bg-transparent border-none outline-none text-[15px] lg:text-[16px] w-full font-bold placeholder-gray-400" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} />
-                <Search size={24} className="text-[#00CD3C] flex-shrink-0" />
+                <Search size={22} className="text-[#00CD3C] flex-shrink-0" />
               </div>
               
-              <div className="flex-shrink-0 flex items-center gap-3 lg:gap-4 font-bold text-[13px] lg:text-[15px]">
-                {mounted && user && (
-                  /* --- 가상 지갑 UI (데스크톱) --- */
-                  <div className="flex items-center gap-1.5 bg-[#F4FBF7] hover:bg-[#EBF7F0] px-3.5 py-1.5 rounded-full border border-[#D1F2DE] shadow-sm transition duration-300 group whitespace-nowrap">
-                    <span className="text-[15px] group-hover:scale-120 transition duration-300">💳</span>
-                    <span className="text-[#00CD3C] text-[12px] lg:text-[13px] font-black tracking-tight">
-                      보유 포인트 <strong className="text-gray-900 font-black ml-1 text-[13px] lg:text-[14px]">{(balance || 0).toLocaleString()} P</strong>
-                    </span>
-                  </div>
-                )}
-                {user ? (
-                  user.isAdmin ? (
-                    /* --- 최고 관리자 UI --- */
-                    <div className="flex items-center gap-2 bg-[#FFFDF5] px-3 py-1.5 rounded-full border border-[#FDE047] shadow-sm whitespace-nowrap animate-in fade-in duration-350">
-                      <div className="flex-shrink-0 w-7 h-7 bg-gradient-to-tr from-amber-400 to-yellow-500 text-white rounded-full flex items-center justify-center font-black text-xs shadow-inner ring-1 ring-amber-300">
-                        👑
+              <div className="flex-shrink-0 flex items-center gap-4 lg:gap-6 font-bold text-[13px] lg:text-[15px]">
+                {mounted && user ? (
+                  <div className="flex items-center gap-4">
+                    {/* 수직 2행 구조: 상단 회원/관리자 정보, 하단 보유 포인트 */}
+                    <div className="flex flex-col items-end gap-1.5">
+                      {user.isAdmin ? (
+                        /* --- 최고 관리자 UI --- */
+                        <div className="flex items-center gap-2 bg-[#FFFDF5] px-3.5 py-1 rounded-full border border-[#FDE047] shadow-sm whitespace-nowrap animate-in fade-in duration-350">
+                          <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-tr from-amber-400 to-yellow-500 text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-inner ring-1 ring-amber-300">
+                            👑
+                          </div>
+                          <span className="text-amber-800 text-[11px] lg:text-[12px]">
+                            최고 관리자 <strong className="text-amber-600 font-extrabold text-[12px] lg:text-[13px]">{user.name}</strong>님
+                          </span>
+                        </div>
+                      ) : (
+                        /* --- 일반 회원 UI --- */
+                        <div className="flex items-center gap-2 bg-[#F5F8FF] px-3.5 py-1 rounded-full border border-[#DBEAFE] shadow-sm whitespace-nowrap animate-in fade-in duration-350">
+                          <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-tr from-[#3B82F6] to-[#6366F1] text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-inner">
+                            {user.name ? user.name[0] : "👤"}
+                          </div>
+                          <span className="text-blue-700 font-bold text-[11px] lg:text-[12px]">
+                            🎫 일반회원 <strong className="text-[#3B82F6] font-extrabold text-[12px] lg:text-[13px]">{user.name}</strong>님
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* 보유 포인트 배지 (관리자/일반회원 배지 밑으로 정렬) */}
+                      <div className="flex items-center gap-1.5 bg-[#F4FBF7] hover:bg-[#EBF7F0] px-3.5 py-1 rounded-full border border-[#D1F2DE] shadow-sm transition duration-300 group whitespace-nowrap">
+                        <span className="text-[14px] group-hover:scale-110 transition duration-300">💳</span>
+                        <span className="text-[#00CD3C] text-[11px] lg:text-[12px] font-black tracking-tight">
+                          보유 포인트 <strong className="text-gray-900 font-black ml-1 text-[12px] lg:text-[13px]">{(balance || 0).toLocaleString()} P</strong>
+                        </span>
                       </div>
-                      <span className="text-amber-800 text-[12px] lg:text-[13px]">
-                        최고 관리자 <strong className="text-amber-600 font-extrabold text-[14px] lg:text-[15px]">{user.name}</strong>님
-                      </span>
                     </div>
-                  ) : (
-                    /* --- 일반 회원 UI --- */
-                    <div className="flex items-center gap-2 bg-[#F5F8FF] px-3 py-1.5 rounded-full border border-[#DBEAFE] shadow-sm whitespace-nowrap animate-in fade-in duration-350">
-                      <div className="flex-shrink-0 w-7 h-7 bg-gradient-to-tr from-[#3B82F6] to-[#6366F1] text-white rounded-full flex items-center justify-center font-black text-xs shadow-inner">
-                        {user.name ? user.name[0] : "👤"}
-                      </div>
-                      <span className="text-blue-700 font-bold text-[12px] lg:text-[13px]">
-                        🎫 일반회원 <strong className="text-[#3B82F6] font-extrabold text-[14px] lg:text-[15px]">{user.name}</strong>님
-                      </span>
+                    
+                    {/* 세로 구분선 */}
+                    <div className="h-9 w-[1px] bg-gray-200" />
+                  </div>
+                ) : (
+                  mounted && !user && (
+                    <div className="flex items-center gap-2 bg-gray-50 px-3.5 py-1.5 rounded-full border border-gray-200 shadow-sm whitespace-nowrap text-gray-400 text-xs">
+                      로그인 필요
                     </div>
                   )
-                ) : (
-                  <div className="flex items-center gap-2 bg-gray-50 px-3.5 py-1.5 rounded-full border border-gray-200 shadow-sm whitespace-nowrap text-gray-400 text-xs">로그인 필요</div>
                 )}
                 
-                <button onClick={() => user ? logout() : openLoginModal()} className="transition-colors font-black text-gray-400 hover:text-gray-600 cursor-pointer text-xs lg:text-sm">
-                  {user ? <><LogOut size={16} className="inline mr-1"/> 로그아웃</> : <><LogIn size={16} className="inline mr-1"/> 로그인</>}
-                </button>
-                
-                <Link href="/ticket" className="flex items-center gap-1.5 text-[#00CD3C] bg-green-50 px-4 py-2 rounded-full shadow-sm hover:shadow-md transition whitespace-nowrap text-xs lg:text-sm">
-                  <Ticket size={18} /> 마이티켓
-                </Link>
+                {/* 우측 로그아웃/로그인 및 마이티켓 액션 버튼 */}
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <button onClick={() => user ? logout() : openLoginModal()} className="transition-colors font-black text-gray-400 hover:text-gray-600 cursor-pointer text-xs lg:text-sm py-2 px-3 rounded-lg hover:bg-gray-50 flex items-center gap-1.5">
+                    {user ? <><LogOut size={16} /> <span>로그아웃</span></> : <><LogIn size={16} /> <span>로그인</span></>}
+                  </button>
+                  
+                  <Link href="/ticket" className="flex items-center gap-1.5 text-[#00CD3C] bg-green-50 hover:bg-green-100 hover:shadow transition-all duration-300 px-4 py-2 rounded-full shadow-sm whitespace-nowrap text-xs lg:text-sm font-black">
+                    <Ticket size={18} /> <span>마이티켓</span>
+                  </Link>
+                </div>
               </div>
             </div>
 
