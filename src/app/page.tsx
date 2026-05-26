@@ -299,11 +299,12 @@ export default function Home() {
                     <Link key={concert.id} href={`/seat?id=${concert.id}&title=${encodeURIComponent(concert.title)}`} className="group flex flex-col cursor-pointer">
                       <div className="w-full aspect-[3/4.2] bg-gray-100 rounded-2xl overflow-hidden mb-4 shadow-md relative transform transition duration-500 group-hover:-translate-y-2 border border-gray-200 flex items-center justify-center">
                         <img src={concert.imageUrl} alt={concert.title} className="w-full h-full object-contain transition duration-700 group-hover:scale-105" onError={(e) => e.currentTarget.src = "https://cdn.pixabay.com/photo/2017/01/10/03/54/icon-1968254_1280.png"} />
-                        
-                        <div className="absolute top-3 left-3 bg-[#00CD3C] text-white text-[12px] font-black px-3 py-1.5 rounded-full shadow-sm">
-                          {concert.category ? concert.category.split("(")[0] : "공연"}
-                        </div>
                       </div>
+                      
+                      {/* 공연 제목 바로 위에 배치된 세련된 카테고리 텍스트 배지 (포스터 메인 표지를 완벽하게 보존) */}
+                      <span className="text-[12px] text-[#00CD3C] font-extrabold tracking-tight mb-1">
+                        {concert.category ? concert.category.split("(")[0] : "공연"}
+                      </span>
                       <h3 className="font-extrabold text-[18px] leading-snug line-clamp-2 text-gray-900 group-hover:text-[#00CD3C] h-[48px] transition-colors">{concert.title}</h3>
                       <p className="text-[14px] text-gray-500 mt-2 font-bold truncate">{concert.location}</p>
                     </Link>
