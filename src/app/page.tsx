@@ -202,8 +202,8 @@ export default function Home() {
           </header>
 
           {/* 모바일 전용 헤더 */}
-          <header className="block md:hidden bg-white border-b border-gray-200 w-full sticky top-0 z-30 shadow-sm px-4 py-3">
-            <div className="flex flex-col gap-2.5">
+          <header className="block md:hidden bg-white border-b border-gray-200 w-full sticky top-0 z-30 shadow-sm px-4 py-3.5">
+            <div className="flex flex-col gap-3">
               {/* 상단: 로고 및 로그인/마이티켓 */}
               <div className="flex items-center justify-between w-full">
                 <Link href="/" className="hover:opacity-80 transition cursor-pointer flex-shrink-0">
@@ -234,26 +234,26 @@ export default function Home() {
                     </button>
                   )}
                   
-                  <Link href="/ticket" className="flex items-center gap-1 text-[#00CD3C] bg-green-50 px-2 py-1 rounded-full shadow-sm hover:shadow-md transition whitespace-nowrap text-[10px] border border-green-100 font-black flex-shrink-0">
+                  <Link href="/ticket" className="flex items-center gap-1 text-[#00CD3C] bg-green-50 px-2.5 py-1.5 rounded-full shadow-sm hover:shadow-md transition whitespace-nowrap text-[10px] border border-green-200 font-black flex-shrink-0">
                     <Ticket size={11} /> <span>마이티켓</span>
                   </Link>
                 </div>
               </div>
-
-              {/* 중단 1.5행: 모바일 전용 가상 지갑 정보 단독 한 줄 노출 */}
+ 
+              {/* 중단 1.5행: 모바일 전용 가상 지갑 정보 단독 한 줄 노출 (웹 버전과 동일하게 rounded-full 및 border-2 얇은 두께로 톤앤매너 통일) */}
               {mounted && user && (
-                <div className="flex items-center justify-between bg-[#F4FBF7] px-4 py-2.5 rounded-xl border border-[#D1F2DE] text-[11px] font-black text-[#00CD3C] w-full shadow-inner animate-in fade-in duration-300">
+                <div className="flex items-center justify-between bg-[#F4FBF7] px-5 py-2 rounded-full border-2 border-[#D1F2DE] text-[11px] font-black text-[#00CD3C] w-full shadow-inner animate-in fade-in duration-300">
                   <div className="flex items-center gap-1.5">
                     <span>💳 내 가상 지갑</span>
                     <span className="text-gray-400">|</span>
-                    <span className="text-gray-500 font-bold text-[10px]">결제 시 자동 실시간 차감</span>
+                    <span className="text-gray-500 font-bold text-[10px]">자동 실시간 차감</span>
                   </div>
-                  <span className="text-gray-900 text-sm font-black tracking-tight">{(balance || 0).toLocaleString()} P</span>
+                  <span className="text-gray-900 text-[13px] font-black tracking-tight">{(balance || 0).toLocaleString()} P</span>
                 </div>
               )}
-
-              {/* 중단: 모바일 검색창 */}
-              <div className="flex items-center border-[2px] border-[#00CD3C] rounded-full px-3.5 py-1.5 bg-white w-full">
+ 
+              {/* 중단: 모바일 검색창 (웹 버전의 얇은 border-2 멜론 티켓 룩에 정확하게 맞춤 조정) */}
+              <div className="flex items-center border-2 border-[#00CD3C] rounded-full px-4 py-1.5 bg-white w-full">
                 <input type="text" placeholder="공연명 또는 장소 검색..." className="bg-transparent border-none outline-none text-[12px] w-full font-bold placeholder-gray-400" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} />
                 <Search size={16} className="text-[#00CD3C] flex-shrink-0" />
               </div>
