@@ -114,7 +114,7 @@ export default function Home() {
             <div className="max-w-[1440px] mx-auto px-8 py-6 flex items-center justify-between w-full gap-4">
               <Link href="/" className="flex-shrink-0 flex items-end gap-2 hover:opacity-80 transition cursor-pointer">
                 <h1 className="font-black text-[34px] lg:text-[40px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">Anti-Macro</h1>
-                <span className="text-gray-400 font-bold mb-1 text-base lg:text-lg hidden lg:inline">Ticket</span>
+                <span className="text-[#00CD3C] font-bold mb-1 text-base lg:text-lg hidden lg:inline">Ticket</span>
               </Link>
               
               <div className="flex-1 max-w-[600px] min-w-[300px] flex items-center border-[3px] border-[#00CD3C] rounded-full px-6 py-3 bg-white">
@@ -176,7 +176,7 @@ export default function Home() {
               <div className="flex items-center justify-between w-full">
                 <Link href="/" className="hover:opacity-80 transition cursor-pointer flex-shrink-0">
                   <h1 className="font-black text-[20px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">
-                    Anti-Macro <span className="text-gray-400 font-bold text-[11px] not-italic ml-0.5">Ticket</span>
+                    Anti-Macro <span className="text-[#00CD3C] font-bold text-[11px] not-italic ml-0.5">Ticket</span>
                   </h1>
                 </Link>
                 
