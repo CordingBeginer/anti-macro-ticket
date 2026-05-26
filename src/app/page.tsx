@@ -88,7 +88,7 @@ export default function Home() {
           >
             <h1 className="text-white text-5xl md:text-7xl font-black italic tracking-tighter leading-none flex flex-col md:block">
               <span>Anti-Macro</span>
-              <span className="md:ml-4 text-white/80">Ticket</span>
+              <span className="md:ml-4 text-white/80">티켓</span>
             </h1>
           </motion.div>
           
@@ -124,7 +124,7 @@ export default function Home() {
               <div className="flex items-center gap-6 lg:gap-8 flex-1">
                 <Link href="/" className="flex-shrink-0 flex items-end gap-1.5 hover:opacity-80 transition cursor-pointer">
                   <h1 className="font-black text-[30px] lg:text-[34px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">Anti-Macro</h1>
-                  <span className="text-[#00CD3C] font-bold mb-0.5 text-sm lg:text-base hidden lg:inline">Ticket</span>
+                  <span className="text-[#00CD3C] font-bold mb-0.5 text-sm lg:text-base hidden lg:inline">티켓</span>
                 </Link>
                 
                 {/* 멜론 티켓 스타일: border-2의 얇고 날렵한 콤팩트 검색창 */}
@@ -463,7 +463,7 @@ export default function Home() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-extrabold text-[17px] text-gray-900 tracking-tight flex items-center gap-1 cursor-pointer hover:text-[#00CD3C] transition">
-                              <span className="truncate">{user.name.slice(0, 1) + "**"}님</span>
+                              <span className="truncate">{user.name}님</span>
                               <ChevronRight size={16} className="text-gray-400 mt-0.5" />
                             </h3>
                             <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[#00CD3C] font-bold">
@@ -564,32 +564,6 @@ export default function Home() {
                       <span>매크로 없는 깨끗한 안심예매 ON</span>
                     </div>
                     <span className="bg-white/20 px-2 py-0.5 rounded text-[10px]">🛡️ 보안중</span>
-                  </div>
-
-                  {/* 드로어 최하단 4대 퀵 메뉴 아이콘 바 */}
-                  <div className="bg-gray-50 border-t border-gray-100 py-4 px-3 flex-shrink-0">
-                    <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-extrabold text-gray-500 select-none">
-                      {[
-                        { label: "랭킹", icon: <Trophy size={18} className="text-gray-600" /> },
-                        { label: "이벤트", icon: <Gift size={18} className="text-gray-600" /> },
-                        { label: "티켓오픈", icon: <Clock size={18} className="text-gray-600" /> },
-                        { label: "고객센터", icon: <HelpCircle size={18} className="text-gray-600" /> }
-                      ].map((quick, i) => (
-                        <div
-                          key={`quick-${i}`}
-                          onClick={() => {
-                            setDrawerOpen(false);
-                            alert(`${quick.label} 서비스는 준비 중입니다.`);
-                          }}
-                          className="flex flex-col items-center gap-1.5 cursor-pointer active:scale-95"
-                        >
-                          <div className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm hover:shadow transition">
-                            {quick.icon}
-                          </div>
-                          <span>{quick.label}</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
 
                 </motion.div>

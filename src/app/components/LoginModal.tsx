@@ -141,7 +141,7 @@ export default function LoginModal() {
           {/* 브랜딩 영역 */}
           <div className="text-center px-8 pt-2 pb-6">
             <h2 className="text-[34px] font-black text-[#00CD3C] tracking-tighter italic leading-none">
-              Anti-Macro <span className="text-[#00CD3C]">Ticket</span>
+              Anti-Macro <span className="text-[#00CD3C]">티켓</span>
             </h2>
             <p className="text-xs text-gray-400 font-extrabold mt-2 tracking-tight">
               매크로 없는 깨끗한 티켓팅, 안티 매크로 티켓
