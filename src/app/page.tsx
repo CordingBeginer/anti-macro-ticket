@@ -229,10 +229,10 @@ export default function Home() {
                 </div>
               </div>
  
-              {/* 중단 1.5행: 콤팩트 가로 1줄 원형 박스 (검색창이 메인이 되도록 가로폭을 w-fit으로 축소하고 비주얼 무게 경량화) */}
+              {/* 중단 1.5행: 콤팩트 가로 1줄 원형 박스 (세로폭/높이를 극도로 축소하여 슬림하게 배치) */}
               {mounted && user && (
-                <div className="flex items-center justify-center gap-3 border-2 border-[#00CD3C]/60 rounded-full px-4.5 py-1 bg-white shadow-sm w-fit mx-auto min-h-[38px] whitespace-nowrap select-none animate-in fade-in duration-300">
-                  {/* 왼쪽: 유저 이름 정보 (모바일 축소형) */}
+                <div className="flex items-center justify-center gap-2.5 border border-[#00CD3C]/50 rounded-full px-3.5 py-0.5 bg-[#FFFDF9]/60 shadow-sm w-fit mx-auto min-h-[28px] whitespace-nowrap select-none animate-in fade-in duration-300">
+                  {/* 왼쪽: 유저 이름 정보 (모바일 초소형 슬림화) */}
                   {user.isAdmin ? (
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <span className="text-[10px] flex-shrink-0">👑</span>
@@ -262,10 +262,10 @@ export default function Home() {
                 </div>
               )}
  
-              {/* 중단: 모바일 검색창 (웹 버전의 얇은 border-2 멜론 티켓 룩에 정확하게 맞춤 조정) */}
-              <div className="flex items-center border-2 border-[#00CD3C] rounded-full px-4 py-1.5 bg-white w-full">
-                <input type="text" placeholder="공연명 또는 장소 검색..." className="bg-transparent border-none outline-none text-[12px] w-full font-bold placeholder-gray-400" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} />
-                <Search size={16} className="text-[#00CD3C] flex-shrink-0" />
+              {/* 중단: 모바일 검색창 (세로 높이/패딩을 기분 좋게 늘려 주인공 룩으로 등극) */}
+              <div className="flex items-center border-2 border-[#00CD3C] rounded-full px-5 py-2.5 bg-white w-full shadow-sm focus-within:shadow-[0_0_10px_rgba(0,205,60,0.06)] transition-all">
+                <input type="text" placeholder="공연명 또는 장소 검색..." className="bg-transparent border-none outline-none text-[13px] w-full font-bold placeholder-gray-400" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} />
+                <Search size={18} className="text-[#00CD3C] flex-shrink-0" />
               </div>
             </div>
 
