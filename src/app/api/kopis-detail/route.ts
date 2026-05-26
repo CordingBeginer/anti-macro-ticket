@@ -75,6 +75,7 @@ export async function GET(request: Request) {
       adres,
       telno,
       parkinglot,
+      category: item.genrenm || "정보 없음",
     };
 
     return NextResponse.json({ data });

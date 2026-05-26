@@ -9,13 +9,7 @@ import { ArrowLeft, CheckCircle2, CreditCard, Receipt, RefreshCw, Bot, ShieldChe
 import { supabase } from "@/src/lib/superbase";
 import { useAuth } from "../components/AuthProvider";
 import LoginModal from "../components/LoginModal";
-
-const PRICE_MAP: Record<string, number> = {
-  "VIP석": 165000,
-  "R석": 143000,
-  "S석": 121000,
-  "A석": 99000,
-};
+import { getPerformancePrices } from "../utils/price";
 
 function PaymentContent() {
   const router = useRouter();
@@ -63,22 +57,40 @@ function PaymentContent() {
   const performanceTitle = searchParams.get('title') || "공연 정보 없음";
   const selectedDate = searchParams.get('date') || "2026.05.22 (금) 18:00";
   const selectedZone = searchParams.get('zone') || "VIP석";
+  const category = searchParams.get('category') || "기타";
   
   const seatsParam = searchParams.get('seats') || searchParams.get('seat') || "";
   const seatsArr = seatsParam ? seatsParam.split(",") : [];
   const seatCount = seatsArr.length > 0 ? seatsArr.length : 1;
   const seatInfo = seatsArr.length > 0 ? `${selectedZone} ${seatsArr.join(", ")}` : "좌석 정보 없음";
   
-  const unitPrice = PRICE_MAP[selectedZone] || 165000;
+  // getPerformancePrices 기반 등급별 단가 동적 연산
+  const dynamicPrices = getPerformancePrices(performanceId, category);
+  let unitPrice = dynamicPrices["A석"];
+  const zoneLower = selectedZone.toLowerCase();
+  
+  if (zoneLower.includes("vip") || zoneLower.includes("플로어") || zoneLower.includes("a구역")) {
+    if (zoneLower.includes("스탠딩")) {
+      unitPrice = Math.round(dynamicPrices["VIP석"] * 0.8 / 1000) * 1000;
+    } else {
+      unitPrice = dynamicPrices["VIP석"];
+    }
+  } else if (zoneLower.includes("r석") || zoneLower.includes("1층") || zoneLower.includes("b구역")) {
+    unitPrice = dynamicPrices["R석"];
+  } else if (zoneLower.includes("s석") || zoneLower.includes("2층") || zoneLower.includes("c구역")) {
+    unitPrice = dynamicPrices["S석"];
+  } else if (zoneLower.includes("a석") || zoneLower.includes("3층") || zoneLower.includes("d구역")) {
+    unitPrice = dynamicPrices["A석"];
+  }
+
   const totalPrice = unitPrice * seatCount; 
-  const [balance, setBalance] = useState(5000000); 
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
 
-  // 전역 인증 정보 가져오기
-  const { user, openLoginModal, logEvent } = useAuth();
+  // 전역 인증 정보 및 가상 지갑(포인트) 가져오기
+  const { user, openLoginModal, logEvent, balance, deductBalance } = useAuth();
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -202,7 +214,12 @@ function PaymentContent() {
       const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrText)}`;
       setQrImageUrl(generatedQrUrl);
 
-      setBalance(prev => prev - totalPrice);
+      // 실제 전역 잔액 차감 수행
+      const deductSuccess = deductBalance(totalPrice);
+      if (!deductSuccess) {
+        throw new Error("결제 승인 중 잔액이 부족해졌습니다.");
+      }
+      
       setIsProcessing(false);
       setIsPaid(true);
 

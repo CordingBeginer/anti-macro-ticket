@@ -22,6 +22,8 @@ interface AuthContextType {
   loginAsAdmin: () => void;
   logout: () => Promise<void>;
   logEvent: (event: string, details?: any) => Promise<void>;
+  balance: number;
+  deductBalance: (amount: number) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [balance, setBalance] = useState<number>(0);
 
   // 실시간 서버/클라이언트 로거 함수
   const logEvent = async (event: string, details?: any) => {
@@ -206,6 +209,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     closeLoginModal();
   };
 
+  // 유저 변경 시 해당 유저의 잔고 로드 및 기본 지급
+  useEffect(() => {
+    if (user) {
+      const storageKey = `amt_balance_${user.id}`;
+      const savedBalance = localStorage.getItem(storageKey);
+      if (savedBalance !== null) {
+        setBalance(parseInt(savedBalance, 10));
+      } else {
+        localStorage.setItem(storageKey, "5000000");
+        setBalance(5000000);
+      }
+    } else {
+      setBalance(0);
+    }
+  }, [user]);
+
+  const deductBalance = (amount: number): boolean => {
+    if (!user) return false;
+    const storageKey = `amt_balance_${user.id}`;
+    const currentBalance = parseInt(localStorage.getItem(storageKey) || "5000000", 10);
+    
+    if (currentBalance < amount) {
+      return false;
+    }
+    
+    const newBalance = currentBalance - amount;
+    localStorage.setItem(storageKey, newBalance.toString());
+    setBalance(newBalance);
+    return true;
+  };
+
   // 로그아웃
   const logout = async () => {
     const prevUser = user;
@@ -228,6 +262,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginAsAdmin,
         logout,
         logEvent,
+        balance,
+        deductBalance,
       }}
     >
       {children}

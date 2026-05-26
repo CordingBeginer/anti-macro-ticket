@@ -8,6 +8,7 @@ import { ArrowLeft, RefreshCw, CalendarDays, ShieldCheck, Armchair, Loader2, Bot
 import Script from "next/script";
 import { useAuth } from "../components/AuthProvider";
 import { supabase } from "@/src/lib/superbase";
+import { getPerformancePrices } from "../utils/price";
 
 function NaverMap({ lat, lng, facilityName }: { lat: number; lng: number; facilityName?: string }) {
   const mapElement = useRef<HTMLDivElement>(null);
@@ -204,6 +205,7 @@ function SeatSelectionContent() {
     telno: string;
     parkinglot: string;
     detailImages: string[];
+    category?: string;
   }
 
   const [showInfo, setShowInfo] = useState<ShowInfo | null>(null);
@@ -635,7 +637,8 @@ function SeatSelectionContent() {
       seats: selectedSeats.join(','),
       title: performanceTitle,
       date: selectedDate,
-      token: secureToken // 결제 페이지에 검증 토큰 전달
+      token: secureToken, // 결제 페이지에 검증 토큰 전달
+      category: showInfo?.category || "기타"
     });
     router.push(`/payment?${params.toString()}`);
   };
@@ -868,9 +871,29 @@ function SeatSelectionContent() {
 
         {step === "SEAT" && (() => {
           const venueType = showInfo ? getVenueType(showInfo.venue) : "SMALL";
-          const currentZones = venueType === "ARENA" ? ARENA_ZONES 
-                             : venueType === "STANDING" ? STANDING_ZONES 
-                             : TICKET_ZONES;
+          const performanceCategory = showInfo?.category || "기타";
+          const dynamicPrices = getPerformancePrices(id || "default", performanceCategory);
+          
+          const currentZones = venueType === "ARENA" 
+            ? [
+                { name: "플로어석", price: dynamicPrices["VIP석"].toLocaleString() + "원" },
+                { name: "1층 지정석", price: dynamicPrices["R석"].toLocaleString() + "원" },
+                { name: "2층 지정석", price: dynamicPrices["S석"].toLocaleString() + "원" },
+                { name: "3층 지정석", price: dynamicPrices["A석"].toLocaleString() + "원" }
+              ]
+            : venueType === "STANDING"
+            ? [
+                { name: "스탠딩 A구역", price: (Math.round(dynamicPrices["VIP석"] * 0.8 / 1000) * 1000).toLocaleString() + "원" },
+                { name: "스탠딩 B구역", price: (Math.round(dynamicPrices["VIP석"] * 0.8 / 1000) * 1000).toLocaleString() + "원" },
+                { name: "지정석 C구역", price: dynamicPrices["S석"].toLocaleString() + "원" },
+                { name: "지정석 D구역", price: dynamicPrices["A석"].toLocaleString() + "원" }
+              ]
+            : [
+                { name: "VIP석", price: dynamicPrices["VIP석"].toLocaleString() + "원" },
+                { name: "R석", price: dynamicPrices["R석"].toLocaleString() + "원" },
+                { name: "S석", price: dynamicPrices["S석"].toLocaleString() + "원" },
+                { name: "A석", price: dynamicPrices["A석"].toLocaleString() + "원" }
+              ];
 
           return (
           <div className="flex flex-col gap-8 animate-in slide-in-from-bottom-5 duration-300 text-left">

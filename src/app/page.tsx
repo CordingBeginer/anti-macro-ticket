@@ -27,7 +27,7 @@ export default function Home() {
   const [searchKeyword, setSearchKeyword] = useState("");
 
   // 전역 인증 훅 사용
-  const { user, openLoginModal, logout } = useAuth();
+  const { user, openLoginModal, logout, balance } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 3500);
@@ -122,6 +122,15 @@ export default function Home() {
                 <Search size={24} className="text-[#00CD3C] flex-shrink-0" />
               </div>
                <div className="flex-shrink-0 flex items-center gap-6 font-bold text-[14px] lg:text-[16px]">
+                {user && (
+                  /* --- 가상 지갑 UI (데스크톱) --- */
+                  <div className="flex items-center gap-2 bg-[#F4FBF7] hover:bg-[#EBF7F0] px-4 py-2 rounded-full border border-[#D1F2DE] shadow-sm transition duration-300 group whitespace-nowrap">
+                    <span className="text-[17px] group-hover:scale-125 transition duration-300">💳</span>
+                    <span className="text-[#00CD3C] text-[13px] font-black tracking-tight">
+                      보유 포인트 <strong className="text-gray-900 font-black ml-1 text-[15px]">{balance.toLocaleString()} P</strong>
+                    </span>
+                  </div>
+                )}
                 {user ? (
                   user.isAdmin ? (
                     /* --- 최고 관리자 UI --- */
@@ -183,6 +192,12 @@ export default function Home() {
                 <div className="flex items-center gap-2 font-bold text-[12px] flex-shrink-0">
                   {user ? (
                     <>
+                      {/* 가상 지갑 UI (모바일) */}
+                      <div className="flex items-center gap-1 bg-[#F4FBF7] px-2 py-0.5 rounded-full border border-[#D1F2DE] text-[10px] font-black text-[#00CD3C] whitespace-nowrap">
+                        <span>💳</span>
+                        <span className="text-gray-900">{balance.toLocaleString()} P</span>
+                      </div>
+
                       {/* 동그란 슬라이드형 아바타 프로필 배지 적용 (긴 이메일명 겹침 현상 원천 해결) */}
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-black text-[12px] shadow-sm select-none flex-shrink-0 ${
                         user.isAdmin 
