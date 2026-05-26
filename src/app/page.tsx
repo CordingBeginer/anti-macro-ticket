@@ -88,7 +88,7 @@ export default function Home() {
           >
             <h1 className="text-white text-5xl md:text-7xl font-black italic tracking-tighter leading-none flex flex-col md:block">
               <span>Anti-Macro</span>
-              <span className="md:ml-4 text-white/80">티켓</span>
+              <span className="md:ml-4 text-white/80">Ticket</span>
             </h1>
           </motion.div>
           
@@ -124,7 +124,7 @@ export default function Home() {
               <div className="flex items-center gap-6 lg:gap-8 flex-1">
                 <Link href="/" className="flex-shrink-0 flex items-end gap-1.5 hover:opacity-80 transition cursor-pointer">
                   <h1 className="font-black text-[30px] lg:text-[34px] text-[#00CD3C] tracking-tighter italic leading-none whitespace-nowrap">Anti-Macro</h1>
-                  <span className="text-[#00CD3C] font-bold mb-0.5 text-sm lg:text-base hidden lg:inline">티켓</span>
+                  <span className="text-[#00CD3C] font-bold mb-0.5 text-sm lg:text-base hidden lg:inline">Ticket</span>
                 </Link>
                 
                 {/* 멜론 티켓 스타일: border-2의 얇고 날렵한 콤팩트 검색창 */}
@@ -214,7 +214,7 @@ export default function Home() {
               {/* 중앙: Melon티켓 스타일 로고 */}
               <Link href="/" className="hover:opacity-90 transition cursor-pointer flex items-center justify-center flex-1">
                 <span className="font-extrabold text-[18px] tracking-tight whitespace-nowrap">
-                  Anti-Macro <strong className="text-[#00CD3C] font-black">티켓</strong>
+                  Anti-Macro <strong className="text-[#00CD3C] font-black">Ticket</strong>
                 </span>
               </Link>
 

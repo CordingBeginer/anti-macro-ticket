@@ -5,7 +5,7 @@ import { AuthProvider } from "@/src/app/components/AuthProvider";
 import LandscapeBlocker from "@/src/app/components/LandscapeBlocker";
 
 export const metadata: Metadata = {
-  title: "Anti-Macro 티켓",
+  title: "Anti-Macro Ticket",
   description: "충햄과 딸래미들의 청정 티켓팅",
 };
 
