@@ -192,12 +192,6 @@ export default function Home() {
                 <div className="flex items-center gap-2 font-bold text-[12px] flex-shrink-0">
                   {user ? (
                     <>
-                      {/* 가상 지갑 UI (모바일) */}
-                      <div className="flex items-center gap-1 bg-[#F4FBF7] px-2 py-0.5 rounded-full border border-[#D1F2DE] text-[10px] font-black text-[#00CD3C] whitespace-nowrap">
-                        <span>💳</span>
-                        <span className="text-gray-900">{balance.toLocaleString()} P</span>
-                      </div>
-
                       {/* 동그란 슬라이드형 아바타 프로필 배지 적용 (긴 이메일명 겹침 현상 원천 해결) */}
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-black text-[12px] shadow-sm select-none flex-shrink-0 ${
                         user.isAdmin 
@@ -222,6 +216,18 @@ export default function Home() {
                   </Link>
                 </div>
               </div>
+
+              {/* 중단 1.5행: 모바일 전용 가상 지갑 정보 단독 한 줄 노출 */}
+              {user && (
+                <div className="flex items-center justify-between bg-[#F4FBF7] px-4 py-2.5 rounded-xl border border-[#D1F2DE] text-[11px] font-black text-[#00CD3C] w-full shadow-inner animate-in fade-in duration-300">
+                  <div className="flex items-center gap-1.5">
+                    <span>💳 내 가상 지갑</span>
+                    <span className="text-gray-400">|</span>
+                    <span className="text-gray-500 font-bold text-[10px]">결제 시 자동 실시간 차감</span>
+                  </div>
+                  <span className="text-gray-900 text-sm font-black tracking-tight">{balance.toLocaleString()} P</span>
+                </div>
+              )}
 
               {/* 중단: 모바일 검색창 */}
               <div className="flex items-center border-[2px] border-[#00CD3C] rounded-full px-3.5 py-1.5 bg-white w-full">
