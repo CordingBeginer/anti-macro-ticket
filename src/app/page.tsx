@@ -300,9 +300,6 @@ export default function Home() {
                         onError={(e) => e.currentTarget.src = "https://cdn.pixabay.com/photo/2017/01/10/03/54/icon-1968254_1280.png"}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0e1715]/95 via-transparent to-transparent flex flex-col justify-end p-5">
-                        <span className="text-[11px] text-[#00CD3C] font-black tracking-widest uppercase mb-1 drop-shadow-md">
-                          당신의 최애 매크로 제로 메이트 💚
-                        </span>
                         <h3 className="text-white font-extrabold text-[19px] leading-tight line-clamp-2 drop-shadow">
                           {concert.title}
                         </h3>
