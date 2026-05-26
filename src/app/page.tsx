@@ -20,6 +20,7 @@ interface Concert {
 }
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [activeCategory, setActiveCategory] = useState("전체");
   const [concerts, setConcerts] = useState<Concert[]>([]);
@@ -28,6 +29,10 @@ export default function Home() {
 
   // 전역 인증 훅 사용
   const { user, openLoginModal, logout, balance } = useAuth();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 3500);
@@ -122,12 +127,12 @@ export default function Home() {
                 <Search size={24} className="text-[#00CD3C] flex-shrink-0" />
               </div>
                <div className="flex-shrink-0 flex items-center gap-6 font-bold text-[14px] lg:text-[16px]">
-                {user && (
+                {mounted && user && (
                   /* --- 가상 지갑 UI (데스크톱) --- */
                   <div className="flex items-center gap-2 bg-[#F4FBF7] hover:bg-[#EBF7F0] px-4 py-2 rounded-full border border-[#D1F2DE] shadow-sm transition duration-300 group whitespace-nowrap">
                     <span className="text-[17px] group-hover:scale-125 transition duration-300">💳</span>
                     <span className="text-[#00CD3C] text-[13px] font-black tracking-tight">
-                      보유 포인트 <strong className="text-gray-900 font-black ml-1 text-[15px]">{balance.toLocaleString()} P</strong>
+                      보유 포인트 <strong className="text-gray-900 font-black ml-1 text-[15px]">{(balance || 0).toLocaleString()} P</strong>
                     </span>
                   </div>
                 )}
@@ -218,14 +223,14 @@ export default function Home() {
               </div>
 
               {/* 중단 1.5행: 모바일 전용 가상 지갑 정보 단독 한 줄 노출 */}
-              {user && (
+              {mounted && user && (
                 <div className="flex items-center justify-between bg-[#F4FBF7] px-4 py-2.5 rounded-xl border border-[#D1F2DE] text-[11px] font-black text-[#00CD3C] w-full shadow-inner animate-in fade-in duration-300">
                   <div className="flex items-center gap-1.5">
                     <span>💳 내 가상 지갑</span>
                     <span className="text-gray-400">|</span>
                     <span className="text-gray-500 font-bold text-[10px]">결제 시 자동 실시간 차감</span>
                   </div>
-                  <span className="text-gray-900 text-sm font-black tracking-tight">{balance.toLocaleString()} P</span>
+                  <span className="text-gray-900 text-sm font-black tracking-tight">{(balance || 0).toLocaleString()} P</span>
                 </div>
               )}
 
