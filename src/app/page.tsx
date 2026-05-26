@@ -37,8 +37,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 3500);
-    return () => clearTimeout(timer);
+    if (typeof window !== "undefined") {
+      const hasShownSplash = sessionStorage.getItem("hasShownSplash");
+      if (hasShownSplash === "true") {
+        setShowSplash(false);
+      } else {
+        const timer = setTimeout(() => {
+          setShowSplash(false);
+          sessionStorage.setItem("hasShownSplash", "true");
+        }, 3500);
+        return () => clearTimeout(timer);
+      }
+    }
   }, []);
 
   useEffect(() => {
