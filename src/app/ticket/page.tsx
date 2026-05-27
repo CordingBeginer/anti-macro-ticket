@@ -41,7 +41,7 @@ export default function MyTicketPage() {
   const [qrTimer, setQrTimer] = useState(15);
 
   // 전역 인증 상태 가져오기
-  const { user, loading: authLoading, openLoginModal, refundBalance } = useAuth();
+  const { user, loading: authLoading, openLoginModal, refundBalance, logEvent } = useAuth();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -346,9 +346,15 @@ export default function MyTicketPage() {
 
                     if (error) throw error;
 
-                    // 환불 성공 시 전역 가상 잔액 복구
+                    // 환불 성공 시 전역 가상 잔액 복구 및 실시간 취소 로그 전송
                     if (cancelledTicket) {
                       refundBalance(cancelledTicket.totalPrice);
+                      await logEvent("🔴 TICKET CANCELLED & REFUNDED", {
+                        title: cancelledTicket.title,
+                        seats: cancelledTicket.seatList.join(", "),
+                        refundAmount: cancelledTicket.totalPrice,
+                        ticketCount: cancelledTicket.count
+                      });
                     }
 
                     setTickets(prev => prev.filter(t => !ids.includes(t.id)));
