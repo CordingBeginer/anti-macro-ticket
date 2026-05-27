@@ -211,24 +211,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     closeLoginModal();
   };
 
+  // 🛡️ 실시간 Supabase DB 연동 잔액 자동 정밀 계산 및 동기화 (기기간 불일치 원천 차단)
+  const syncBalanceFromDb = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("price")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      // Supabase 실시간 예매 목록의 총 가격 합산
+      const activeBookingsCost = data ? data.reduce((sum, item: any) => sum + Number(item.price || 0), 0) : 0;
+      // 실시간 잔액 = 기본 500만 P - 현재 활성화된 예매 금액 합계
+      const calculatedBalance = Math.max(0, 5000000 - activeBookingsCost);
+      
+      const storageKey = `amt_balance_${userId}`;
+      localStorage.setItem(storageKey, calculatedBalance.toString());
+      setBalance(calculatedBalance);
+      
+      console.log(`🛡️ [REALTIME WALLET DB SYNC] User: ${userId} | Active Cost: ${activeBookingsCost} P | Balance: ${calculatedBalance} P`);
+    } catch (err) {
+      console.error("실시간 잔고 동기화 실패:", err);
+      // 오프라인/실패 시 로컬스토리지 백업 로드
+      const storageKey = `amt_balance_${userId}`;
+      const saved = localStorage.getItem(storageKey);
+      setBalance(saved ? parseInt(saved, 10) : 5000000);
+    }
+  };
+
   // 유저 변경 시 해당 유저의 잔고 로드 및 기본 지급 (최대 500만 포인트 제한 보장)
   useEffect(() => {
     if (user) {
-      const storageKey = `amt_balance_${user.id}`;
-      const savedBalance = localStorage.getItem(storageKey);
-      if (savedBalance !== null) {
-        const val = parseInt(savedBalance, 10);
-        // 이미 500만 포인트를 초과했다면 500만으로 즉시 교정 및 저장
-        if (val > 5000000) {
-          localStorage.setItem(storageKey, "5000000");
-          setBalance(5000000);
-        } else {
-          setBalance(val);
-        }
-      } else {
-        localStorage.setItem(storageKey, "5000000");
-        setBalance(5000000);
-      }
+      syncBalanceFromDb(user.id);
     } else {
       setBalance(0);
     }
@@ -243,25 +258,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
     
-    // 차감 후 혹시 모를 오버플로우 방지 및 안전 보장
+    // 로컬 즉시 반영 (UX 향상)
     const newBalance = Math.max(0, Math.min(5000000, currentBalance - amount));
     localStorage.setItem(storageKey, newBalance.toString());
     setBalance(newBalance);
+    
+    // 백그라운드 실시간 동기화
+    setTimeout(() => syncBalanceFromDb(user.id), 800);
     return true;
   };
 
   const refundBalance = (amount: number): void => {
     if (!user) return;
-    const storageKey = `amt_balance_${user.id}`;
-    let currentBalance = parseInt(localStorage.getItem(storageKey) || "5000000", 10);
-    // 혹시라도 로컬 스토리지에 데이터가 깨졌거나 NaN이 되어 있다면 복구
-    if (isNaN(currentBalance)) {
-      currentBalance = 5000000;
-    }
-    // 환불 시 최대 한도인 5,000,000 포인트를 넘지 못하도록 Math.min 적용 및 강제 숫자 덧셈 보장!
-    const newBalance = Math.min(5000000, currentBalance + Number(amount));
-    localStorage.setItem(storageKey, newBalance.toString());
-    setBalance(newBalance);
+    // 환불 처리 즉시 DB에서 예매 내역이 지워졌으므로 실시간으로 잔액을 정확하게 새로 계산하여 반영!
+    setTimeout(() => syncBalanceFromDb(user.id), 200);
   };
 
   const resetBalance = (): void => {
