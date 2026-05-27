@@ -11,20 +11,20 @@ export async function POST(request: Request) {
 
     // 1. 토큰이 주어지지 않은 경우 차단
     if (!token) {
-      console.log(`\x1b[1m\x1b[31m[ANTI-MACRO BLOCK]\x1b[0m 🔴 TOKEN VERIFICATION FAILED: Token is missing!`);
+      console.log(`\x1b[1m\x1b[31m[ANTI-MACRO MONITOR] 🚨 CRYPTOGRAPHIC VERIFICATION FAILED (Bypass Attempt Blocked)\x1b[0m | Reason: Token is missing!`);
       return NextResponse.json({ valid: false, error: "보안 토큰이 누락되었습니다." }, { status: 400 });
     }
 
     // 2. 기본 규격 검사 (AMT-SECURE-PASS로 시작해야 함)
     if (!token.startsWith("AMT-SECURE-PASS-")) {
-      console.log(`\x1b[1m\x1b[31m[ANTI-MACRO BLOCK]\x1b[0m 🔴 TOKEN VERIFICATION FAILED: Invalid token format! Token: ${token}`);
+      console.log(`\x1b[1m\x1b[31m[ANTI-MACRO MONITOR] 🚨 CRYPTOGRAPHIC VERIFICATION FAILED (Bypass Attempt Blocked)\x1b[0m | Reason: Invalid token format! Token: ${token}`);
       return NextResponse.json({ valid: false, error: "올바르지 않은 위조 보안 토큰 규격입니다." }, { status: 400 });
     }
 
     // 3. 토큰 구성 요소 분리 (AMT-SECURE-PASS-[timestamp]-[hash])
     const parts = token.split("-");
     if (parts.length < 5) {
-      console.log(`\x1b[1m\x1b[31m[ANTI-MACRO BLOCK]\x1b[0m 🔴 TOKEN VERIFICATION FAILED: Malformed token parts! Token: ${token}`);
+      console.log(`\x1b[1m\x1b[31m[ANTI-MACRO MONITOR] 🚨 CRYPTOGRAPHIC VERIFICATION FAILED (Bypass Attempt Blocked)\x1b[0m | Reason: Malformed token parts! Token: ${token}`);
       return NextResponse.json({ valid: false, error: "손상된 보안 토큰입니다." }, { status: 400 });
     }
 
@@ -43,13 +43,13 @@ export async function POST(request: Request) {
     const timeDiff = now - timestamp;
 
     if (timeDiff > tenMinutes) {
-      console.log(`\x1b[1m\x1b[31m[ANTI-MACRO BLOCK]\x1b[0m 🔴 TOKEN VERIFICATION FAILED: Token expired! Age: ${Math.round(timeDiff / 1000)}s`);
+      console.log(`\x1b[1m\x1b[31m[ANTI-MACRO MONITOR] 🚨 CRYPTOGRAPHIC VERIFICATION FAILED (Bypass Attempt Blocked)\x1b[0m | Reason: Token expired! Age: ${Math.round(timeDiff / 1000)}s`);
       return NextResponse.json({ valid: false, error: "보안 토큰 세션이 만료되었습니다. (유효 시간 10분 초과)\n\n다시 캡차 보안 인증을 완료해 주세요." }, { status: 401 });
     }
 
     // 5초 이상의 미래 시간 조작 차단 (미래 시각 조작 방지)
     if (timeDiff < -5000) {
-      console.log(`\x1b[1m\x1b[31m[ANTI-MACRO BLOCK]\x1b[0m 🔴 TOKEN VERIFICATION FAILED: Clock tampering detected!`);
+      console.log(`\x1b[1m\x1b[31m[ANTI-MACRO MONITOR] 🚨 CRYPTOGRAPHIC VERIFICATION FAILED (Bypass Attempt Blocked)\x1b[0m | Reason: Clock tampering detected!`);
       return NextResponse.json({ valid: false, error: "비정상적인 컴퓨터 시스템 시각 조작이 감지되었습니다." }, { status: 400 });
     }
 
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 
     if (clientHash !== serverExpectedHash) {
       console.log(
-        `\x1b[1m\x1b[31m[ANTI-MACRO BLOCK]\x1b[0m 🔴 TOKEN VERIFICATION FAILED: HMAC Signature mismatch! Expected: ${serverExpectedHash.substring(0, 8)}..., Client: ${clientHash.substring(0, 8)}...`
+        `\x1b[1m\x1b[31m[ANTI-MACRO MONITOR] 🚨 CRYPTOGRAPHIC VERIFICATION FAILED (Bypass Attempt Blocked)\x1b[0m | Reason: HMAC Signature mismatch! Expected: ${serverExpectedHash.substring(0, 8)}..., Client: ${clientHash.substring(0, 8)}...`
       );
       return NextResponse.json({ valid: false, error: "보안 서명 검증에 실패했습니다. (위조된 토큰 감지됨)" }, { status: 403 });
     }

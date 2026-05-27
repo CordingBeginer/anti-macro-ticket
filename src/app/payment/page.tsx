@@ -17,13 +17,25 @@ function PaymentContent() {
   
   const secureToken = searchParams.get('token');
   const [isTokenVerified, setIsTokenVerified] = useState(false);
+  const [isBypassed, setIsBypassed] = useState(false);
+
+  // 전역 인증 정보 및 가상 지갑(포인트) 가져오기
+  const { user, openLoginModal, logEvent, balance, deductBalance } = useAuth();
 
   useEffect(() => {
     const checkTokenValidity = async () => {
       // 1. 형식 조기 점검
       if (!secureToken || !secureToken.startsWith("AMT-SECURE-PASS-")) {
-        alert("❌ 보안 인증 우회 시도가 감지되었습니다. 매크로 차단 검증을 완료한 후 결제할 수 있습니다.");
-        router.push("/");
+        // 서버 콘솔에 실시간 우회 차단 로그 전송
+        await logEvent("[ANTI-MACRO MONITOR] 🚨 CRYPTOGRAPHIC VERIFICATION FAILED (Bypass Attempt Blocked)", {
+          token: secureToken || "None (Bypassed)",
+          attemptedUrl: typeof window !== "undefined" ? window.location.href : ""
+        });
+        setIsBypassed(true);
+        // 3.5초 후 강제로 메인화면(캡차 단계)으로 리다이렉트
+        setTimeout(() => {
+          router.push("/");
+        }, 3500);
         return;
       }
 
@@ -39,9 +51,15 @@ function PaymentContent() {
         if (verifyRes.ok && verifyData.valid) {
           setIsTokenVerified(true);
         } else {
-          // 보안 서명 불일치 혹은 만료
-          alert(`❌ 보안 토큰 검증 실패: ${verifyData.error || "위조되거나 만료된 세션입니다."}`);
-          router.push("/");
+          // 보안 서명 불일치 혹은 만료 시 로그 기록
+          await logEvent("[ANTI-MACRO MONITOR] 🚨 CRYPTOGRAPHIC VERIFICATION FAILED (Bypass Attempt Blocked)", {
+            token: secureToken,
+            reason: verifyData.error || "Invalid signature or expired"
+          });
+          setIsBypassed(true);
+          setTimeout(() => {
+            router.push("/");
+          }, 3500);
         }
       } catch (err) {
         console.error("보안 서버 통신 실패:", err);
@@ -51,7 +69,7 @@ function PaymentContent() {
     };
 
     checkTokenValidity();
-  }, [secureToken, router]);
+  }, [secureToken, router, logEvent]);
 
   const performanceId = searchParams.get('id') || "PF123456";
   const performanceTitle = searchParams.get('title') || "공연 정보 없음";
@@ -89,8 +107,7 @@ function PaymentContent() {
   const [isPaid, setIsPaid] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
 
-  // 전역 인증 정보 및 가상 지갑(포인트) 가져오기
-  const { user, openLoginModal, logEvent, balance, deductBalance } = useAuth();
+
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -236,6 +253,38 @@ function PaymentContent() {
       setIsProcessing(false);
     }
   };
+
+  if (isBypassed) {
+    return (
+      <div className="flex flex-col min-h-screen bg-red-950 px-5 py-10 items-center justify-center animate-in fade-in duration-300">
+        <div className="bg-red-900/30 backdrop-blur-md border border-red-500/30 w-full max-w-md rounded-3xl p-8 shadow-2xl relative flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
+          <div className="w-24 h-24 bg-red-500/20 border border-red-500/40 rounded-full flex items-center justify-center mb-6 relative animate-pulse">
+            <AlertCircle size={56} className="text-red-500" />
+            <span className="absolute inset-0 border-4 border-red-500 rounded-full animate-ping opacity-75"></span>
+          </div>
+          
+          <h1 className="text-2xl font-black text-red-500 mb-4 tracking-tight uppercase">보안 위협 감지</h1>
+          
+          <h2 className="text-xl font-extrabold text-white mb-3 whitespace-pre-wrap leading-relaxed">
+            보안 인증 우회 시도 감지.{"\n"}처음부터 다시 시도해주세요
+          </h2>
+          
+          <p className="text-red-200/70 text-sm mb-8 leading-relaxed">
+            API를 직접 찌르거나 주소창에 파라미터를 조작하여 접속하는 행위는 서버 사이드 HMAC-SHA256 해시 검증 필터에 의해 완벽하게 차단됩니다.
+          </p>
+
+          <div className="w-full bg-red-950/50 p-4 rounded-2xl border border-red-500/20 text-left font-mono text-xs text-red-400 mb-8 break-all">
+            <span className="text-red-500 font-bold">[MONITOR]</span> 🚨 CRYPTOGRAPHIC VERIFICATION FAILED (Bypass Attempt Blocked)
+          </div>
+
+          <div className="flex items-center gap-2 text-red-200/50 text-xs font-semibold animate-pulse">
+            <RefreshCw size={14} className="animate-spin" />
+            3초 후 보안 검증(캡차) 단계로 이동합니다...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isPaid) {
     return (

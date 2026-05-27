@@ -46,6 +46,14 @@ export async function POST(request: Request) {
       else if (userAgent.includes("Linux")) platform = "Linux";
     }
 
+    if (event.includes("Bypass Attempt Blocked") || event.includes("CRYPTOGRAPHIC VERIFICATION FAILED")) {
+      console.log(
+        `\x1b[1m\x1b[31m[ANTI-MACRO MONITOR] 🚨 CRYPTOGRAPHIC VERIFICATION FAILED (Bypass Attempt Blocked)\x1b[0m | User: \x1b[1m${userStr}\x1b[0m | OS: \x1b[36m${platform}\x1b[0m | Details:`,
+        details ? JSON.stringify(details) : "None"
+      );
+      return NextResponse.json({ success: true });
+    }
+
     console.log(
       `${sysPrefix} ${icon} ${color}[${timeStr}] ${event}${reset} | User: \x1b[1m${userStr}${reset} | OS: \x1b[36m${platform}${reset} | Details:`, 
       details ? JSON.stringify(details) : "None"
