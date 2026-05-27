@@ -90,7 +90,7 @@ function PaymentContent() {
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
 
   // 전역 인증 정보 및 가상 지갑(포인트) 가져오기
-  const { user, openLoginModal, logEvent, balance, deductBalance } = useAuth();
+  const { user, openLoginModal, logEvent, balance, deductBalance, resetBalance } = useAuth();
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -301,8 +301,21 @@ function PaymentContent() {
             <CreditCard size={20} className="text-melon-green" /> 내 가상 지갑
           </h2>
           <div className="flex justify-between items-end border-b border-gray-100 pb-5 mb-5">
-            <span className="text-gray-500 text-sm font-bold">보유 포인트</span>
-            <span className="text-3xl font-black text-gray-900">{balance.toLocaleString()} <span className="text-xl text-gray-400 font-bold">P</span></span>
+            <div className="flex flex-col gap-1 text-left">
+              <span className="text-gray-500 text-sm font-bold">보유 포인트</span>
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (confirm("포인트를 500만 P로 다시 충전/초기화하시겠습니까?")) {
+                    resetBalance();
+                  }
+                }}
+                className="text-[10px] w-fit bg-green-50 text-[#00CD3C] border border-[#00CD3C]/30 px-2 py-0.5 rounded transition font-bold cursor-pointer"
+              >
+                포인트 초기화
+              </button>
+            </div>
+            <span className="text-3xl font-black text-gray-900">{(balance || 0).toLocaleString()} <span className="text-xl text-gray-400 font-bold">P</span></span>
           </div>
           <div className="flex justify-between items-end">
             <span className="text-gray-500 text-sm font-bold">결제 예정 금액</span>

@@ -25,6 +25,7 @@ interface AuthContextType {
   balance: number;
   deductBalance: (amount: number) => boolean;
   refundBalance: (amount: number) => void;
+  resetBalance: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -259,6 +260,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setBalance(newBalance);
   };
 
+  const resetBalance = (): void => {
+    if (!user) return;
+    const storageKey = `amt_balance_${user.id}`;
+    localStorage.setItem(storageKey, "5000000");
+    setBalance(5000000);
+    logEvent("🔄 POINT BALANCE RESET TO 5M P", { email: user.email });
+  };
+
   // 로그아웃
   const logout = async () => {
     const prevUser = user;
@@ -284,6 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         balance,
         deductBalance,
         refundBalance,
+        resetBalance,
       }}
     >
       {children}
