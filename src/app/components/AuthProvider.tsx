@@ -210,13 +210,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     closeLoginModal();
   };
 
-  // 유저 변경 시 해당 유저의 잔고 로드 및 기본 지급
+  // 유저 변경 시 해당 유저의 잔고 로드 및 기본 지급 (최대 500만 포인트 제한 보장)
   useEffect(() => {
     if (user) {
       const storageKey = `amt_balance_${user.id}`;
       const savedBalance = localStorage.getItem(storageKey);
       if (savedBalance !== null) {
-        setBalance(parseInt(savedBalance, 10));
+        const val = parseInt(savedBalance, 10);
+        // 이미 500만 포인트를 초과했다면 500만으로 즉시 교정 및 저장
+        if (val > 5000000) {
+          localStorage.setItem(storageKey, "5000000");
+          setBalance(5000000);
+        } else {
+          setBalance(val);
+        }
       } else {
         localStorage.setItem(storageKey, "5000000");
         setBalance(5000000);
@@ -235,7 +242,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
     
-    const newBalance = currentBalance - amount;
+    // 차감 후 혹시 모를 오버플로우 방지 및 안전 보장
+    const newBalance = Math.max(0, Math.min(5000000, currentBalance - amount));
     localStorage.setItem(storageKey, newBalance.toString());
     setBalance(newBalance);
     return true;
@@ -245,7 +253,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const storageKey = `amt_balance_${user.id}`;
     const currentBalance = parseInt(localStorage.getItem(storageKey) || "5000000", 10);
-    const newBalance = currentBalance + amount;
+    // 환불 시 최대 한도인 5,000,000 포인트를 넘지 못하도록 Math.min 적용!
+    const newBalance = Math.min(5000000, currentBalance + amount);
     localStorage.setItem(storageKey, newBalance.toString());
     setBalance(newBalance);
   };

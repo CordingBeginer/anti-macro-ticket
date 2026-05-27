@@ -925,18 +925,18 @@ function SeatSelectionContent() {
                   </button>
                 ))}
               </div>
-              <div className={`w-full bg-gray-50 p-6 rounded-xl overflow-x-auto flex flex-col items-center border transition-opacity duration-300 ${selectedZone ? "opacity-100" : "opacity-30 pointer-events-none"}`}>
+              <div className={`w-full bg-gray-50 p-6 rounded-xl overflow-x-auto border transition-opacity duration-300 ${selectedZone ? "opacity-100" : "opacity-30 pointer-events-none"}`}>
                   
                   {/* 모바일 화면 가로 스크롤 가이드라인 배지 */}
                   {selectedZone && (
-                    <div className="md:hidden w-full text-center py-2 px-4 mb-5 bg-[#00CD3C]/5 border border-[#00CD3C]/20 text-[#00CD3C] rounded-full text-[11px] font-black animate-pulse flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden">
+                    <div className="md:hidden w-full max-w-[500px] mx-auto text-center py-2 px-4 mb-5 bg-[#00CD3C]/5 border border-[#00CD3C]/20 text-[#00CD3C] rounded-full text-[11px] font-black animate-pulse flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden">
                       <span>👈 손가락으로 좌우로 밀어서 전체 좌석을 확인하세요 👉</span>
                     </div>
                   )}
 
                   {/* 🛡️ 매크로 차단 등급 강화 알림 (VIP/R석 등 최고등급 보안 구역 차별화 기능) */}
                   {selectedZone && (selectedZone.includes("VIP") || selectedZone.includes("R석") || selectedZone.includes("플로어") || selectedZone.includes("A구역")) && (
-                    <div className="w-full max-w-[600px] flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 mb-6 animate-in fade-in duration-300 text-xs font-bold leading-relaxed">
+                    <div className="w-full max-w-[600px] mx-auto flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 mb-6 animate-in fade-in duration-300 text-xs font-bold leading-relaxed">
                       <ShieldCheck size={20} className="text-amber-500 animate-pulse flex-shrink-0" />
                       <div className="text-left">
                         <span className="block text-amber-900 font-extrabold text-[13px] mb-0.5">🛡️ 보안 최고 등급 강화 좌석</span>
@@ -946,7 +946,7 @@ function SeatSelectionContent() {
                   )}
 
                  {venueType === "SMALL" && (
-                 <div className="min-w-[550px] flex flex-col items-center">
+                 <div className="min-w-[550px] w-fit mx-auto flex flex-col items-center">
                     <div className="w-full h-8 bg-gray-300 rounded-b-2xl text-gray-500 font-black text-[10px] flex items-center justify-center mb-16 tracking-[1em]">STAGE</div>
                     <div className="flex flex-col gap-2.5">
                         {ROWS.map(row => (
@@ -973,7 +973,7 @@ function SeatSelectionContent() {
                  )}
 
                  {venueType === "ARENA" && (
-                 <div className="min-w-[750px] flex flex-col items-center">
+                 <div className="min-w-[750px] w-fit mx-auto flex flex-col items-center">
                     <div className="w-2/3 h-12 bg-gray-800 rounded-b-3xl text-gray-200 font-black text-[12px] flex items-center justify-center mb-16 tracking-[2em] shadow-lg">MAIN STAGE</div>
                     <div className="flex flex-col gap-2.5">
                         {Array.from({length: 10}).map((_, rIdx) => {
@@ -1003,7 +1003,7 @@ function SeatSelectionContent() {
                  )}
 
                  {venueType === "STANDING" && (
-                 <div className="w-full max-w-[600px] flex flex-col items-center">
+                 <div className="w-full max-w-[600px] mx-auto flex flex-col items-center">
                     <div className="w-full h-8 bg-gray-300 rounded-b-2xl text-gray-500 font-black text-[10px] flex items-center justify-center mb-8 tracking-[1em]">STAGE</div>
                     <p className="text-sm font-bold text-gray-600 mb-6 border-b pb-2">선택 가능한 입장 대기 번호</p>
                     <div className="grid grid-cols-4 md:grid-cols-5 gap-3 w-full">
