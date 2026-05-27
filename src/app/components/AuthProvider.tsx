@@ -253,9 +253,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refundBalance = (amount: number): void => {
     if (!user) return;
     const storageKey = `amt_balance_${user.id}`;
-    const currentBalance = parseInt(localStorage.getItem(storageKey) || "5000000", 10);
-    // 환불 시 최대 한도인 5,000,000 포인트를 넘지 못하도록 Math.min 적용!
-    const newBalance = Math.min(5000000, currentBalance + amount);
+    let currentBalance = parseInt(localStorage.getItem(storageKey) || "5000000", 10);
+    // 혹시라도 로컬 스토리지에 데이터가 깨졌거나 NaN이 되어 있다면 복구
+    if (isNaN(currentBalance)) {
+      currentBalance = 5000000;
+    }
+    // 환불 시 최대 한도인 5,000,000 포인트를 넘지 못하도록 Math.min 적용 및 강제 숫자 덧셈 보장!
+    const newBalance = Math.min(5000000, currentBalance + Number(amount));
     localStorage.setItem(storageKey, newBalance.toString());
     setBalance(newBalance);
   };

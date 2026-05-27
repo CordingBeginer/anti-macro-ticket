@@ -336,8 +336,12 @@ export default function MyTicketPage() {
                   setCancelModal(prev => ({ ...prev, isOpen: false }));
                   setIsDeleting(mainId);
                   try {
-                    // 환불해 줄 금액 계산 (취소할 예매 내역의 totalPrice)
-                    const cancelledTicket = tickets.find(t => t.id === mainId);
+                    // 환불해 줄 금액 계산 (취소할 예매 내역의 totalPrice) - 극도의 안전한 폴백 탐색 적용
+                    const cancelledTicket = tickets.find(
+                      t => t.id === mainId || 
+                           t.ids.includes(mainId) || 
+                           t.ids.some(id => ids.includes(id))
+                    );
 
                     const { error } = await supabase
                       .from("bookings")
@@ -348,11 +352,12 @@ export default function MyTicketPage() {
 
                     // 환불 성공 시 전역 가상 잔액 복구 및 실시간 취소 로그 전송
                     if (cancelledTicket) {
-                      refundBalance(cancelledTicket.totalPrice);
+                      const refundAmount = Number(cancelledTicket.totalPrice || 0);
+                      refundBalance(refundAmount);
                       await logEvent("🔴 TICKET CANCELLED & REFUNDED", {
                         title: cancelledTicket.title,
                         seats: cancelledTicket.seatList.join(", "),
-                        refundAmount: cancelledTicket.totalPrice,
+                        refundAmount: refundAmount,
                         ticketCount: cancelledTicket.count
                       });
                     }
