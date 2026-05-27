@@ -30,7 +30,7 @@ export default function Home() {
   const [searchOpen, setSearchOpen] = useState(false);
 
   // 전역 인증 훅 사용
-  const { user, openLoginModal, logout, balance } = useAuth();
+  const { user, openLoginModal, logout, balance, resetBalance } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -170,11 +170,25 @@ export default function Home() {
                       <div className="w-[120px] h-[1px] bg-gray-100 my-0.5" />
 
                       {/* 2줄: 보유 포인트 */}
-                      <div className="flex items-center gap-1 leading-none mt-0.5">
-                        <span className="text-[10px]">💳</span>
-                        <span className="text-[#00CD3C] text-[10px] lg:text-[11px] font-black tracking-tight">
-                          포인트 <strong className="text-gray-900 font-black ml-0.5">{(balance || 0).toLocaleString()} P</strong>
-                        </span>
+                      <div className="flex items-center gap-2 leading-none mt-0.5">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px]">💳</span>
+                          <span className="text-[#00CD3C] text-[10px] lg:text-[11px] font-black tracking-tight">
+                            포인트 <strong className="text-gray-900 font-black ml-0.5">{(balance || 0).toLocaleString()} P</strong>
+                          </span>
+                        </div>
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (confirm("포인트를 500만 P로 다시 충전/초기화하시겠습니까?")) {
+                              resetBalance();
+                            }
+                          }}
+                          className="text-[9px] bg-green-50 text-[#00CD3C] hover:bg-[#00CD3C] hover:text-white border border-[#00CD3C]/30 px-1.5 py-0.5 rounded transition font-bold cursor-pointer"
+                          title="포인트 500만 P로 초기화"
+                        >
+                          초기화
+                        </button>
                       </div>
                     </div>
                     
@@ -485,9 +499,22 @@ export default function Home() {
                             <span className="text-sm">💳</span>
                             <span className="text-xs text-gray-500 font-bold">보유 포인트</span>
                           </div>
-                          <span className="text-[#00CD3C] font-black text-sm tracking-tight">
-                            {(balance || 0).toLocaleString()} P
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[#00CD3C] font-black text-sm tracking-tight">
+                              {(balance || 0).toLocaleString()} P
+                            </span>
+                            <button 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                if (confirm("포인트를 500만 P로 다시 충전/초기화하시겠습니까?")) {
+                                  resetBalance();
+                                }
+                              }}
+                              className="text-[10px] bg-white text-[#00CD3C] border border-[#00CD3C]/30 px-1.5 py-0.5 rounded transition font-bold cursor-pointer"
+                            >
+                              초기화
+                            </button>
+                          </div>
                         </div>
 
                         {/* 예매 확인 / For U 액션 링크 */}
