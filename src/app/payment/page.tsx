@@ -14,7 +14,7 @@ import { getPerformancePrices } from "../utils/price";
 function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const secureToken = searchParams.get('token');
   const [isTokenVerified, setIsTokenVerified] = useState(false);
   const [isBypassed, setIsBypassed] = useState(false);
@@ -76,17 +76,17 @@ function PaymentContent() {
   const selectedDate = searchParams.get('date') || "2026.05.22 (금) 18:00";
   const selectedZone = searchParams.get('zone') || "VIP석";
   const category = searchParams.get('category') || "기타";
-  
+
   const seatsParam = searchParams.get('seats') || searchParams.get('seat') || "";
   const seatsArr = seatsParam ? seatsParam.split(",") : [];
   const seatCount = seatsArr.length > 0 ? seatsArr.length : 1;
   const seatInfo = seatsArr.length > 0 ? `${selectedZone} ${seatsArr.join(", ")}` : "좌석 정보 없음";
-  
+
   // getPerformancePrices 기반 등급별 단가 동적 연산
   const dynamicPrices = getPerformancePrices(performanceId, category);
   let unitPrice = dynamicPrices["A석"];
   const zoneLower = selectedZone.toLowerCase();
-  
+
   if (zoneLower.includes("vip") || zoneLower.includes("플로어") || zoneLower.includes("a구역")) {
     if (zoneLower.includes("스탠딩")) {
       unitPrice = Math.round(dynamicPrices["VIP석"] * 0.8 / 1000) * 1000;
@@ -101,8 +101,8 @@ function PaymentContent() {
     unitPrice = dynamicPrices["A석"];
   }
 
-  const totalPrice = unitPrice * seatCount; 
-  
+  const totalPrice = unitPrice * seatCount;
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
@@ -162,16 +162,16 @@ function PaymentContent() {
     }
 
     setIsProcessing(true);
-    
+
     // AI 판독 시뮬레이션
     setModalState({ isOpen: true, type: 'ai_analyzing', title: 'AI 행동 패턴 분석 중...', message: '비정상적인 매크로 접근인지\n확인하고 있습니다.' });
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
+
     setModalState({ isOpen: true, type: 'ai_success', title: 'AI 판독 완료', message: '정상적인 사용자로 확인되었습니다!\n결제를 진행합니다.' });
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
+
     setModalState(prev => ({ ...prev, isOpen: false }));
-    
+
     try {
       // 🛡️ [Final Check] 결제 승인 직전 2차 최종 실시간 중복 예매 검사 (0.001초 미세 찰나 방어)
       const { data: finalCheck, error: finalError } = await supabase
@@ -198,14 +198,14 @@ function PaymentContent() {
       const ticketCode = `AMT-${Math.floor(Math.random() * 1000000)}`;
 
       const insertData = seatsArr.map(seatId => ({
-        performance_id: performanceId, 
-        user_id: user.id,       
-        title: performanceTitle,       
-        seat_id: seatId.trim(),        
-        seat: `${selectedZone} ${seatId.trim()}`, 
-        date: selectedDate,            
-        price: unitPrice,              
-        code: `AMT-${Math.floor(Math.random() * 1000000)}`, 
+        performance_id: performanceId,
+        user_id: user.id,
+        title: performanceTitle,
+        seat_id: seatId.trim(),
+        seat: `${selectedZone} ${seatId.trim()}`,
+        date: selectedDate,
+        price: unitPrice,
+        code: `AMT-${Math.floor(Math.random() * 1000000)}`,
         status: "결제완료"
       }));
 
@@ -236,18 +236,18 @@ function PaymentContent() {
       if (!deductSuccess) {
         throw new Error("결제 승인 중 잔액이 부족해졌습니다.");
       }
-      
+
       setIsProcessing(false);
       setIsPaid(true);
 
     } catch (error: any) {
       console.error("🔥 진짜 에러 원인:", error.message || error);
       console.error("🔥 에러 디테일:", error.details || "디테일 없음");
-      
-      setModalState({ 
-        isOpen: true, 
-        type: 'error', 
-        title: 'DB 저장 실패', 
+
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        title: 'DB 저장 실패',
         message: `${error.message || "알 수 없는 에러가 발생했습니다."}\n\n(Supabase 연결을 확인해주세요)`
       });
       setIsProcessing(false);
@@ -262,13 +262,13 @@ function PaymentContent() {
             <AlertCircle size={56} className="text-red-500" />
             <span className="absolute inset-0 border-4 border-red-500 rounded-full animate-ping opacity-75"></span>
           </div>
-          
+
           <h1 className="text-2xl font-black text-red-500 mb-4 tracking-tight uppercase">보안 위협 감지</h1>
-          
+
           <h2 className="text-xl font-extrabold text-white mb-3 whitespace-pre-wrap leading-relaxed">
             보안 인증 우회 시도 감지.{"\n"}처음부터 다시 시도해주세요
           </h2>
-          
+
           <p className="text-red-200/70 text-sm mb-8 leading-relaxed">
             API를 직접 찌르거나 주소창에 파라미터를 조작하여 접속하는 행위는 서버 사이드 HMAC-SHA256 해시 검증 필터에 의해 완벽하게 차단됩니다.
           </p>
@@ -292,7 +292,7 @@ function PaymentContent() {
         <CheckCircle2 size={60} className="text-white mb-6" />
         <h1 className="text-3xl font-black text-white mb-2">결제 완료!</h1>
         <p className="text-white/80 mb-10 text-sm">성공적으로 티켓이 발급되었습니다.</p>
-        
+
         <div className="bg-white w-full max-w-sm rounded-3xl p-7 shadow-2xl relative">
           <div className="flex flex-col items-center justify-center mb-6">
             <div className="border-4 border-gray-100 p-3 rounded-2xl shadow-sm mb-2">
@@ -382,20 +382,20 @@ function PaymentContent() {
       {modalState.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col items-center text-center">
-            
+
             {modalState.type === 'ai_analyzing' && (
               <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-5 relative">
                 <Bot size={40} className="text-blue-500 animate-pulse" />
                 <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
-            
+
             {modalState.type === 'ai_success' && (
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-5">
                 <ShieldCheck size={40} className="text-green-500 animate-in zoom-in duration-300" />
               </div>
             )}
-            
+
             {(modalState.type === 'error' || modalState.type === 'balance_error') && (
               <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-5">
                 <AlertCircle size={40} className="text-red-500 animate-in duration-300" />
@@ -406,7 +406,7 @@ function PaymentContent() {
             <p className="text-gray-500 text-sm mb-6 whitespace-pre-wrap leading-relaxed">{modalState.message}</p>
 
             {(modalState.type === 'error' || modalState.type === 'balance_error') && (
-              <button 
+              <button
                 onClick={() => setModalState(prev => ({ ...prev, isOpen: false }))}
                 className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg active:scale-95"
               >
