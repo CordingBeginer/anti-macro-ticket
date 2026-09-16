@@ -53,7 +53,7 @@
 
 | 정상 사용자 예매 흐름 | 매크로 공격 원천 차단 (API 우회 방어) |
 | :---: | :---: |
-| <img src="정상사용자_GIF_링크를_여기에_넣으세요" width="300" /> | <img src="매크로차단_GIF_링크를_여기에_넣으세요" width="300" /> |
+| <img src="https://github.com/user-attachments/assets/8437246c-3e1c-434a-815c-7c6a5afb3783" width="300" /> | <img src="https://github.com/user-attachments/assets/00ac7fbc-31ef-4a43-ac70-c8d4cbfb4ace" width="300" /> |
 | AI 드로잉 판독 후 지연 없는 결제 진행 | HMAC-SHA256 토큰 검증 실패 시 적색 팝업 및 차단 |
 
 <br/>
