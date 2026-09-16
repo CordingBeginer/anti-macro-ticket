@@ -51,8 +51,6 @@
 
 ## 📺 시연 화면 (Demo)
 
-> 💡 **Tip:** 이곳에 시연 영상을 GIF로 변환하여 첨부하면 좋습니다!
-
 | 정상 사용자 예매 흐름 | 매크로 공격 원천 차단 (API 우회 방어) |
 | :---: | :---: |
 | <img src="정상사용자_GIF_링크를_여기에_넣으세요" width="300" /> | <img src="매크로차단_GIF_링크를_여기에_넣으세요" width="300" /> |
@@ -71,7 +69,7 @@
 
 ## 👨‍💻 팀원 소개
 
-| 한충서 (ChoongSeoHan) | 신서현 | 길혜균 |
+| 한충서 | 신서현 | 길혜균 |
 | :---: | :---: | :---: |
 | [@CordingBeginer](https://github.com/CordingBeginer) | [@GitHubID](https://github.com/) | [@GitHubID](https://github.com/) |
 | 프로젝트 팀장 / 풀스택 개발 | 역할 작성 | 역할 작성 |
