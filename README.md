@@ -71,7 +71,7 @@
 
 ## 👨‍💻 팀원 소개
 
-| 한충서 (ChoongSeoHan) | 팀원 2 이름 | 팀원 3 이름 |
+| 한충서 (ChoongSeoHan) | 신서현 | 길혜균 |
 | :---: | :---: | :---: |
 | [@CordingBeginer](https://github.com/CordingBeginer) | [@GitHubID](https://github.com/) | [@GitHubID](https://github.com/) |
 | 프로젝트 팀장 / 풀스택 개발 | 역할 작성 | 역할 작성 |
